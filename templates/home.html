@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}chess.io - Accueil{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 3rem 0;
+        color: white;
+    }
+
+    .hero h1 {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .hero p {
+        font-size: 1.5rem;
+        margin-bottom: 3rem;
+        opacity: 0.95;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .option-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border: 3px solid transparent;
+    }
+
+    .option-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        border-color: #667eea;
+    }
+
+    .option-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .option-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 0.8rem;
+        color: #333;
+    }
+
+    .option-description {
+        color: #666;
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .option-button {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .option-button.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .option-button.primary:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .option-button.secondary {
+        background: #f3f4f6;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+
+    .option-button.secondary:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    /* Modal pour rejoindre un salon */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 16px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: #333;
+    }
+
+    .modal-close {
+        float: right;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .modal-close:hover {
+        color: #333;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 3rem;
+    }
+
+    .stat-card {
+        background: rgba(255,255,255,0.95);
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .stat-label {
+        color: #666;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>♔ chess.io ♔</h1>
+    <p>Jouez aux échecs en ligne, améliorez votre ELO</p>
+</div>
+
+<div class="options-grid">
+    <!-- Option 1: Rejoindre un salon -->
+    <div class="option-card" onclick="openJoinModal()">
+        <div class="option-icon">🎲</div>
+        <div class="option-title">Rejoindre un salon</div>
+        <div class="option-description">Entrez un code à 6 caractères pour rejoindre une partie privée</div>
+        <button class="option-button secondary">Rejoindre →</button>
+    </div>
+
+    <!-- Option 2: Créer un salon -->
+    <div class="option-card" onclick="window.location.href='/create-room'">
+        <div class="option-icon">🔒</div>
+        <div class="option-title">Créer un salon privé</div>
+        <div class="option-description">Générez un code et jouez avec un ami en temps réel</div>
+        <button class="option-button secondary">Créer un salon →</button>
+    </div>
+
+    <!-- Option 3: Mode classé -->
+    <div class="option-card" onclick="handleRankedClick()">
+        <div class="option-icon">🏆</div>
+        <div class="option-title">Mode Classé</div>
+        <div class="option-description">Affrontez un bot adapté à votre niveau, gagnez de l'ELO !</div>
+        <button class="option-button primary">Jouer pour l'ELO →</button>
+    </div>
+</div>
+
+<!-- Statistiques globales -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">1,247</div>
+        <div class="stat-label">Parties jouées</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">342</div>
+        <div class="stat-label">Joueurs actifs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">89</div>
+        <div class="stat-label">En ligne maintenant</div>
+    </div>
+</div>
+
+<!-- Modal pour rejoindre un salon -->
+<div id="joinModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeJoinModal()">×</span>
+        <div class="modal-header">🎲 Rejoindre un salon</div>
+        
+        <form method="POST" action="/join-room">
+            <div class="form-group">
+                <label class="form-label">Code du salon (6 caractères)</label>
+                <input 
+                    type="text" 
+                    name="code" 
+                    class="form-control" 
+                    placeholder="Ex: A3F9K2"
+                    maxlength="6"
+                    required
+                    style="text-transform: uppercase; text-align: center; font-size: 1.5rem; letter-spacing: 0.3rem;"
+                >
+            </div>
+            <button type="submit" class="option-button primary">
+                Rejoindre la partie →
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openJoinModal() {
+        document.getElementById('joinModal').classList.add('active');
+    }
+
+    function closeJoinModal() {
+        document.getElementById('joinModal').classList.remove('active');
+    }
+
+    function handleRankedClick() {
+        {% if logged_in %}
+            window.location.href = '/ranked';
+        {% else %}
+            if (confirm('Vous devez être connecté pour jouer en mode classé.\n\nSe connecter maintenant ?')) {
+                window.location.href = '/login';
+            }
+        {% endif %}
+    }
+
+    // Fermer la modal en cliquant à l'extérieur
+    document.getElementById('joinModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeJoinModal();
+        }
+    });
+
+    // Auto-uppercase pour le code
+    document.querySelector('input[name="code"]').addEventListener('input', function(e) {
+        e.target.value = e.target.value.toUpperCase();
+    });
+</script>
+{% endblock %}
