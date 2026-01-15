@@ -151,9 +151,21 @@ def get_bot_move(board_fen, elo):
 @app.route('/')
 def home():
     """Page d'accueil"""
+    db = get_db()
+    
+    # Statistiques globales
+    stats = {
+        'total_games': db.execute('SELECT COUNT(*) as count FROM games').fetchone()['count'],
+        'total_players': db.execute('SELECT COUNT(*) as count FROM users').fetchone()['count'],
+        'active_rooms': db.execute("SELECT COUNT(*) as count FROM rooms WHERE status = 'playing'").fetchone()['count']
+    }
+    
+    db.close()
+    
     return render_template('home.html', 
                          logged_in='user_id' in session,
-                         username=session.get('username'))
+                         username=session.get('username'),
+                         stats=stats)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
