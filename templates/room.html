@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+
+{% block title %}Salon {{ code }} - chess.io{% endblock %}
+
+{% block extra_css %}
+<style>
+    .room-container {
+        max-width: 1000px;
+        margin: 2rem auto;
+    }
+
+    .room-header {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .room-code {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #667eea;
+        letter-spacing: 0.5rem;
+        margin: 1rem 0;
+        font-family: monospace;
+    }
+
+    .share-info {
+        background: #dbeafe;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        color: #1e40af;
+    }
+
+    .copy-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-top: 0.5rem;
+        transition: all 0.3s;
+    }
+
+    .copy-btn:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+    }
+
+    .game-layout {
+        display: grid;
+        grid-template-columns: 1fr 500px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .player-info {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .player-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .player-color {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+
+    .player-white {
+        background: #f3f4f6;
+        color: #333;
+    }
+
+    .player-black {
+        background: #1f2937;
+        color: white;
+    }
+
+    .waiting-player {
+        color: #999;
+        font-style: italic;
+        padding: 2rem;
+    }
+
+    .chess-board-wrapper {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .chess-board {
+        display: grid;
+        grid-template-columns: repeat(8, 60px);
+        grid-template-rows: repeat(8, 60px);
+        border: 3px solid #333;
+        margin: 0 auto;
+        width: fit-content;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .square {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        position: relative;
+    }
+
+    .square.light { background-color: #f0d9b5; }
+    .square.dark { background-color: #b58863; }
+
+    .square.selected {
+        background-color: #7fc97f !important;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .square.legal-move {
+        background-color: #90ee90 !important;
+    }
+
+    .square.legal-move::after {
+        content: '●';
+        position: absolute;
+        color: rgba(0,0,0,0.3);
+        font-size: 20px;
+    }
+
+    .square.check {
+        background-color: #ff6b6b !important;
+        animation: pulse 1s infinite;
+    }
+
+    .square:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .game-status {
+        background: #f3f4f6;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .chat-section {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .chat-message {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .chat-message.system {
+        background: #dbeafe;
+        color: #1e40af;
+        text-align: center;
+        font-style: italic;
+    }
+
+    .chat-input {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .chat-input input {
+        flex: 1;
+        padding: 0.8rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+
+    .chat-input button {
+        padding: 0.8rem 1.5rem;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .game-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        margin-top: 1rem;
+    }
+
+    .control-btn {
+        padding: 0.8rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .control-btn.danger {
+        background: #ef4444;
+        color: white;
+    }
+
+    .control-btn.danger:hover {
+        background: #dc2626;
+    }
+
+    @media (max-width: 1200px) {
+        .game-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="room-container">
+    <!-- En-tête du salon -->
+    <div class="room-header">
+        <h2>🔒 Salon Privé</h2>
+        <div class="room-code">{{ code }}</div>
+        <div class="share-info">
+            📤 Partagez ce code avec votre ami pour qu'il rejoigne la partie
+        </div>
+        <button class="copy-btn" onclick="copyCode()">
+            📋 Copier le code
+        </button>
+    </div>
+
+    <!-- Layout du jeu -->
+    <div class="game-layout">
+        <!-- Joueur Blanc -->
+        <div class="player-info">
+            <div class="player-name">
+                {% if room.player_white %}
+                    {{ room.player_white }}
+                {% else %}
+                    En attente...
+                {% endif %}
+            </div>
+            <div class="player-color player-white">♔ Blancs</div>
+        </div>
+
+        <!-- Échiquier -->
+        <div class="chess-board-wrapper">
+            <div class="game-status" id="gameStatus">
+                {% if room.status == 'waiting' %}
+                    ⏳ En attente du joueur noir...
+                {% else %}
+                    ▶️ Au tour des Blancs
+                {% endif %}
+            </div>
+
+            <div class="chess-board" id="chessBoard">
+                <!-- Généré par JavaScript -->
+            </div>
+
+            <div class="game-controls">
+                <button class="control-btn danger" onclick="leaveRoom()">
+                    🚪 Quitter le salon
+                </button>
+            </div>
+        </div>
+
+        <!-- Joueur Noir -->
+        <div class="player-info">
+            <div class="player-name">
+                {% if room.player_black %}
+                    {{ room.player_black }}
+                {% else %}
+                    <span class="waiting-player">En attente...</span>
+                {% endif %}
+            </div>
+            <div class="player-color player-black">♚ Noirs</div>
+        </div>
+    </div>
+
+    <!-- Chat (optionnel, caché pour l'instant) -->
+    <div class="chat-section" style="display: none; margin-top: 2rem;">
+        <h3>💬 Chat</h3>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-message system">
+                Salon créé. En attente du deuxième joueur...
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Votre message...">
+            <button onclick="sendMessage()">Envoyer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Symboles Unicode des pièces
+const PIECES = {
+    'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕', 'K': '♔',
+    'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚'
+};
+
+// Configuration WebSocket
+const socket = io();
+const roomCode = '{{ code }}';
+
+// État du jeu
+let board = '{{ room.board_state }}';
+let selectedSquare = null;
+let legalMoves = [];
+let myColor = null; // 'white' ou 'black'
+let currentTurn = '{{ room.current_turn }}';
+
+// Initialisation
+window.onload = function() {
+    // Détermine la couleur du joueur
+    const playerWhite = '{{ room.player_white }}';
+    const playerBlack = '{{ room.player_black }}';
+    const myUsername = '{{ session.username if session.username else "Invité" }}';
+    
+    if (myUsername === playerWhite) {
+        myColor = 'white';
+    } else if (myUsername === playerBlack) {
+        myColor = 'black';
+    }
+    
+    // Rejoint le salon via WebSocket
+    socket.emit('join', { room: roomCode });
+    
+    // Affiche l'échiquier
+    renderBoard();
+};
+
+// Événements WebSocket
+socket.on('player_joined', function(data) {
+    addSystemMessage(data.username + ' a rejoint le salon');
+    updateStatus();
+});
+
+socket.on('move_made', function(data) {
+    board = data.board;
+    currentTurn = board.split(' ')[1] === 'w' ? 'white' : 'black';
+    selectedSquare = null;
+    legalMoves = [];
+    renderBoard();
+    
+    if (data.game_over) {
+        handleGameOver(data.result);
+    } else {
+        updateStatus(data.is_check);
+    }
+});
+
+socket.on('player_left', function(data) {
+    addSystemMessage(data.username + ' a quitté le salon');
+});
+
+socket.on('error', function(data) {
+    alert('❌ ' + data.message);
+});
+
+// Parse le FEN
+function parseFEN(fen) {
+    const ranks = fen.split(' ')[0].split('/');
+    const pieces = [];
+    
+    for (let rank = 0; rank < 8; rank++) {
+        let file = 0;
+        for (let char of ranks[rank]) {
+            if (char >= '1' && char <= '8') {
+                for (let i = 0; i < parseInt(char); i++) {
+                    pieces.push(null);
+                    file++;
+                }
+            } else {
+                pieces.push(char);
+                file++;
+            }
+        }
+    }
+    
+    return pieces;
+}
+
+// Convertit index en notation
+function indexToSquare(index) {
+    const file = index % 8;
+    const rank = 7 - Math.floor(index / 8);
+    return String.fromCharCode(97 + file) + (rank + 1);
+}
+
+// Affiche l'échiquier
+function renderBoard() {
+    const boardEl = document.getElementById('chessBoard');
+    boardEl.innerHTML = '';
+    
+    const pieces = parseFEN(board);
+    
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        const rank = Math.floor(i / 8);
+        const file = i % 8;
+        
+        square.className = 'square ' + ((rank + file) % 2 === 0 ? 'light' : 'dark');
+        square.dataset.index = i;
+        square.dataset.square = indexToSquare(i);
+        
+        if (pieces[i]) {
+            square.textContent = PIECES[pieces[i]] || '';
+        }
+        
+        // Gestion des clics seulement si c'est notre tour
+        if (isMyTurn()) {
+            square.addEventListener('click', handleSquareClick);
+        }
+        
+        boardEl.appendChild(square);
+    }
+    
+    updateVisualState();
+}
+
+// Vérifie si c'est notre tour
+function isMyTurn() {
+    if (!myColor) return false;
+    return currentTurn === myColor;
+}
+
+// Met à jour l'état visuel
+function updateVisualState() {
+    document.querySelectorAll('.square').forEach(sq => {
+        sq.classList.remove('selected', 'legal-move');
+    });
+    
+    if (selectedSquare !== null) {
+        const selectedEl = document.querySelector(`[data-square="${selectedSquare}"]`);
+        if (selectedEl) selectedEl.classList.add('selected');
+        
+        legalMoves.forEach(move => {
+            const moveEl = document.querySelector(`[data-square="${move}"]`);
+            if (moveEl) moveEl.classList.add('legal-move');
+        });
+    }
+}
+
+// Gère le clic sur une case
+async function handleSquareClick(e) {
+    if (!isMyTurn()) return;
+    
+    const square = e.currentTarget.dataset.square;
+    
+    // Si aucune pièce sélectionnée
+    if (selectedSquare === null) {
+        const piece = e.currentTarget.textContent;
+        const myPieces = myColor === 'white' ? 
+            ['♙', '♘', '♗', '♖', '♕', '♔'] : 
+            ['♟', '♞', '♝', '♜', '♛', '♚'];
+        
+        if (piece && myPieces.includes(piece)) {
+            selectedSquare = square;
+            await fetchLegalMoves(square);
+            updateVisualState();
+        }
+    } else {
+        // Tentative de déplacement
+        if (legalMoves.includes(square)) {
+            makeMove(selectedSquare + square);
+        } else {
+            // Nouvelle sélection ?
+            const piece = e.currentTarget.textContent;
+            const myPieces = myColor === 'white' ? 
+                ['♙', '♘', '♗', '♖', '♕', '♔'] : 
+                ['♟', '♞', '♝', '♜', '♛', '♚'];
+            
+            if (piece && myPieces.includes(piece)) {
+                selectedSquare = square;
+                await fetchLegalMoves(square);
+                updateVisualState();
+            } else {
+                selectedSquare = null;
+                legalMoves = [];
+                updateVisualState();
+            }
+        }
+    }
+}
+
+// Récupère les coups légaux
+async function fetchLegalMoves(square) {
+    try {
+        const response = await fetch('/api/get-legal-moves', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ board: board, square: square })
+        });
+        const data = await response.json();
+        legalMoves = data.legal_moves || [];
+    } catch (error) {
+        console.error('Erreur:', error);
+        legalMoves = [];
+    }
+}
+
+// Fait un coup
+function makeMove(move) {
+    socket.emit('move', {
+        room: roomCode,
+        move: move,
+        board: board
+    });
+    
+    selectedSquare = null;
+    legalMoves = [];
+}
+
+// Met à jour le statut
+function updateStatus(isCheck) {
+    const status = document.getElementById('gameStatus');
+    if (isCheck) {
+        status.innerHTML = '⚠️ ÉCHEC !';
+        status.style.background = '#fee2e2';
+        status.style.color = '#dc2626';
+    } else {
+        const turn = currentTurn === 'white' ? 'Blancs' : 'Noirs';
+        status.innerHTML = `▶️ Au tour des ${turn}`;
+        status.style.background = '#f3f4f6';
+        status.style.color = '#333';
+    }
+}
+
+// Gère la fin de partie
+function handleGameOver(result) {
+    let message = '';
+    if (result === '1-0') {
+        message = '🎉 Les Blancs ont gagné !';
+    } else if (result === '0-1') {
+        message = '🎉 Les Noirs ont gagné !';
+    } else {
+        message = '🤝 Match nul !';
+    }
+    
+    document.getElementById('gameStatus').innerHTML = message;
+    setTimeout(() => alert(message), 500);
+}
+
+// Ajoute un message système
+function addSystemMessage(text) {
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-message system';
+        msgDiv.textContent = text;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+// Copie le code du salon
+function copyCode() {
+    navigator.clipboard.writeText(roomCode);
+    alert('✅ Code copié : ' + roomCode);
+}
+
+// Quitte le salon
+function leaveRoom() {
+    if (confirm('Quitter le salon ?')) {
+        socket.emit('leave', { room: roomCode });
+        window.location.href = '/';
+    }
+}
+
+// Nettoyage à la fermeture
+window.onbeforeunload = function() {
+    socket.emit('leave', { room: roomCode });
+};
+</script>
+{% endblock %}
