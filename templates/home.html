@@ -205,18 +205,34 @@
 <!-- Statistiques globales -->
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-number">1,247</div>
+        <div class="stat-number" id="totalGames">{{ stats.total_games }}</div>
         <div class="stat-label">Parties jouées</div>
     </div>
     <div class="stat-card">
-        <div class="stat-number">342</div>
-        <div class="stat-label">Joueurs actifs</div>
+        <div class="stat-number" id="totalPlayers">{{ stats.total_players }}</div>
+        <div class="stat-label">Joueurs inscrits</div>
     </div>
     <div class="stat-card">
-        <div class="stat-number">89</div>
-        <div class="stat-label">En ligne maintenant</div>
+        <div class="stat-number" id="activeRooms">{{ stats.active_rooms }}</div>
+        <div class="stat-label">Parties en cours</div>
     </div>
 </div>
+
+<script>
+// Met à jour les stats toutes les 10 secondes
+setInterval(async function() {
+    try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        
+        document.getElementById('totalGames').textContent = data.total_games;
+        document.getElementById('totalPlayers').textContent = data.total_players;
+        document.getElementById('activeRooms').textContent = data.active_rooms;
+    } catch (error) {
+        console.error('Erreur mise à jour stats:', error);
+    }
+}, 10000);
+</script>
 
 <!-- Modal pour rejoindre un salon -->
 <div id="joinModal" class="modal">
