@@ -1,0 +1,591 @@
+{% extends "base.html" %}
+
+{% block title %}Mode Classé - chess.io{% endblock %}
+
+{% block extra_css %}
+<style>
+    .game-container {
+        display: grid;
+        grid-template-columns: 1fr 500px 1fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    .sidebar-left, .sidebar-right {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .chess-board-wrapper {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .chess-board {
+        display: grid;
+        grid-template-columns: repeat(8, 60px);
+        grid-template-rows: repeat(8, 60px);
+        border: 3px solid #333;
+        margin: 0 auto;
+        width: fit-content;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .square {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+        position: relative;
+    }
+
+    .square.light { background-color: #f0d9b5; }
+    .square.dark { background-color: #b58863; }
+
+    .square.selected {
+        background-color: #7fc97f !important;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .square.legal-move {
+        background-color: #90ee90 !important;
+    }
+
+    .square.legal-move::after {
+        content: '●';
+        position: absolute;
+        color: rgba(0,0,0,0.3);
+        font-size: 20px;
+    }
+
+    .square.check {
+        background-color: #ff6b6b !important;
+        animation: pulse 1s infinite;
+    }
+
+    .square:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+
+    .square.dragging {
+        opacity: 0.5;
+        cursor: grabbing !important;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .elo-display {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .elo-number {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .elo-label {
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .rank-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+
+    .game-status {
+        background: #f3f4f6;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .game-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        margin-top: 1rem;
+    }
+
+    .control-btn {
+        padding: 0.8rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .control-btn.primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .control-btn.primary:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+    }
+
+    .control-btn.secondary {
+        background: #f3f4f6;
+        color: #667eea;
+    }
+
+    .control-btn.secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .history-section {
+        margin-top: 2rem;
+    }
+
+    .history-title {
+        font-weight: bold;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+
+    .history-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.8rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .history-result {
+        font-weight: 600;
+    }
+
+    .history-result.win { color: #10b981; }
+    .history-result.loss { color: #ef4444; }
+    .history-result.draw { color: #6b7280; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-box {
+        background: #f9fafb;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.3rem;
+    }
+
+    .bot-info {
+        text-align: center;
+        padding: 1rem;
+        background: #f3f4f6;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+
+    .bot-elo {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ef4444;
+    }
+
+    @media (max-width: 1200px) {
+        .game-container {
+            grid-template-columns: 1fr;
+        }
+        .sidebar-left {
+            order: -1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <!-- SIDEBAR GAUCHE : Stats joueur -->
+    <div class="sidebar-left">
+        <div class="elo-display">
+            <div class="elo-label">Votre ELO</div>
+            <div class="elo-number" id="playerElo">{{ user.elo }}</div>
+            <div class="rank-badge">{{ rank }}</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-value">{{ user.games_played }}</div>
+                <div class="stat-label">Parties</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ user.games_won }}</div>
+                <div class="stat-label">Victoires</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ user.peak_elo }}</div>
+                <div class="stat-label">Meilleur ELO</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">
+                    {% if user.games_played > 0 %}
+                        {{ ((user.games_won / user.games_played) * 100) | round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </div>
+                <div class="stat-label">Taux victoire</div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-title">📊 Historique récent</div>
+            {% if games %}
+                {% for game in games[:5] %}
+                <div class="history-item">
+                    <span>Bot ELO {{ game.bot_elo }}</span>
+                    <span class="history-result {% if game.result == '1-0' %}win{% elif game.result == '0-1' %}loss{% else %}draw{% endif %}">
+                        {% if game.result == '1-0' %}
+                            ✅ +{{ game.elo_change }}
+                        {% elif game.result == '0-1' %}
+                            ❌ {{ game.elo_change }}
+                        {% else %}
+                            🤝 {{ game.elo_change }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="text-align: center; color: #999;">Aucune partie jouée</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- CENTRE : Échiquier -->
+    <div class="chess-board-wrapper">
+        <div class="bot-info">
+            <div style="color: #666; font-size: 0.9rem;">🤖 Adversaire</div>
+            <div class="bot-elo">Bot ELO <span id="botElo">{{ user.elo }}</span></div>
+        </div>
+
+        <div class="game-status" id="gameStatus">
+            ▶️ Au tour des Blancs (Vous)
+        </div>
+
+        <div class="chess-board" id="chessBoard">
+            <!-- Généré par JavaScript -->
+        </div>
+
+        <div class="game-controls">
+            <button class="control-btn primary" onclick="newGame()">
+                🎮 Nouvelle partie
+            </button>
+            <button class="control-btn secondary" onclick="undoMove()">
+                ↩️ Annuler le coup
+            </button>
+        </div>
+    </div>
+
+    <!-- SIDEBAR DROITE : Instructions -->
+    <div class="sidebar-right">
+        <h3 style="margin-bottom: 1rem;">📖 Comment jouer</h3>
+        
+        <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            <strong>🖱️ Contrôles :</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; color: #666;">
+                <li>Cliquez sur une pièce blanche</li>
+                <li>Cliquez sur une case verte</li>
+                <li>La pièce se déplace</li>
+                <li>Le bot répond automatiquement</li>
+            </ul>
+        </div>
+
+        <div style="background: #dbeafe; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            <strong>📈 Système ELO :</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; color: #1e40af;">
+                <li>Le bot s'adapte à votre niveau</li>
+                <li>Victoire : +15 ELO environ</li>
+                <li>Défaite : -15 ELO environ</li>
+                <li>Match nul : 0 ELO</li>
+            </ul>
+        </div>
+
+        <div style="background: #d1fae5; padding: 1rem; border-radius: 8px;">
+            <strong>🏆 Rangs :</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; color: #059669; font-size: 0.9rem;">
+                <li>800 : ♟️ Débutant</li>
+                <li>1000 : ♘ Novice</li>
+                <li>1200 : ♗ Amateur</li>
+                <li>1400 : ♖ Intermédiaire</li>
+                <li>1600 : ♕ Avancé</li>
+                <li>1800 : ♔ Expert</li>
+                <li>2000 : 👑 Maître</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// Symboles Unicode des pièces
+const PIECES = {
+    'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕', 'K': '♔',
+    'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚'
+};
+
+// État du jeu
+let board = null;
+let selectedSquare = null;
+let legalMoves = [];
+let playerElo = {{ user.elo }};
+
+// Initialise le jeu
+function initGame() {
+    // Position de départ
+    board = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    renderBoard();
+}
+
+// Parse le FEN pour extraire les pièces
+function parseFEN(fen) {
+    const ranks = fen.split(' ')[0].split('/');
+    const pieces = [];
+    
+    for (let rank = 0; rank < 8; rank++) {
+        let file = 0;
+        for (let char of ranks[rank]) {
+            if (char >= '1' && char <= '8') {
+                for (let i = 0; i < parseInt(char); i++) {
+                    pieces.push(null);
+                    file++;
+                }
+            } else {
+                pieces.push(char);
+                file++;
+            }
+        }
+    }
+    
+    return pieces;
+}
+
+// Convertit index en notation d'échecs
+function indexToSquare(index) {
+    const file = index % 8;
+    const rank = 7 - Math.floor(index / 8);
+    return String.fromCharCode(97 + file) + (rank + 1);
+}
+
+// Convertit notation en index
+function squareToIndex(square) {
+    const file = square.charCodeAt(0) - 97;
+    const rank = parseInt(square[1]) - 1;
+    return (7 - rank) * 8 + file;
+}
+
+// Affiche l'échiquier
+function renderBoard() {
+    const boardEl = document.getElementById('chessBoard');
+    boardEl.innerHTML = '';
+    
+    const pieces = parseFEN(board);
+    
+    for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        const rank = Math.floor(i / 8);
+        const file = i % 8;
+        
+        square.className = 'square ' + ((rank + file) % 2 === 0 ? 'light' : 'dark');
+        square.dataset.index = i;
+        square.dataset.square = indexToSquare(i);
+        
+        if (pieces[i]) {
+            square.textContent = PIECES[pieces[i]] || '';
+        }
+        
+        // Gestion des clics
+        square.addEventListener('click', handleSquareClick);
+        
+        boardEl.appendChild(square);
+    }
+    
+    updateVisualState();
+}
+
+// Met à jour l'état visuel (sélection, coups légaux)
+function updateVisualState() {
+    document.querySelectorAll('.square').forEach(sq => {
+        sq.classList.remove('selected', 'legal-move');
+    });
+    
+    if (selectedSquare !== null) {
+        const selectedEl = document.querySelector(`[data-square="${selectedSquare}"]`);
+        if (selectedEl) selectedEl.classList.add('selected');
+        
+        legalMoves.forEach(move => {
+            const moveEl = document.querySelector(`[data-square="${move}"]`);
+            if (moveEl) moveEl.classList.add('legal-move');
+        });
+    }
+}
+
+// Gère le clic sur une case
+async function handleSquareClick(e) {
+    const square = e.currentTarget.dataset.square;
+    
+    // Si aucune pièce sélectionnée
+    if (selectedSquare === null) {
+        const piece = e.currentTarget.textContent;
+        // Vérifie si c'est une pièce blanche
+        if (piece && ['♙', '♘', '♗', '♖', '♕', '♔'].includes(piece)) {
+            selectedSquare = square;
+            await fetchLegalMoves(square);
+            updateVisualState();
+        }
+    } else {
+        // Tentative de déplacement
+        if (legalMoves.includes(square)) {
+            await makeMove(selectedSquare + square);
+        } else {
+            // Nouvelle sélection ?
+            const piece = e.currentTarget.textContent;
+            if (piece && ['♙', '♘', '♗', '♖', '♕', '♔'].includes(piece)) {
+                selectedSquare = square;
+                await fetchLegalMoves(square);
+                updateVisualState();
+            } else {
+                selectedSquare = null;
+                legalMoves = [];
+                updateVisualState();
+            }
+        }
+    }
+}
+
+// Récupère les coups légaux
+async function fetchLegalMoves(square) {
+    try {
+        const response = await fetch('/api/get-legal-moves', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ board: board, square: square })
+        });
+        const data = await response.json();
+        legalMoves = data.legal_moves || [];
+    } catch (error) {
+        console.error('Erreur:', error);
+        legalMoves = [];
+    }
+}
+
+// Fait un coup
+async function makeMove(move) {
+    try {
+        const response = await fetch('/api/make-move', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ board: board, move: move })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('❌ ' + data.error);
+            return;
+        }
+        
+        board = data.board;
+        selectedSquare = null;
+        legalMoves = [];
+        renderBoard();
+        
+        if (data.game_over) {
+            handleGameOver(data);
+        } else {
+            updateStatus(data.is_check);
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        alert('❌ Erreur lors du coup');
+    }
+}
+
+// Gère la fin de partie
+function handleGameOver(data) {
+    document.getElementById('gameStatus').innerHTML = data.message;
+    document.getElementById('playerElo').textContent = data.elo_after;
+    playerElo = data.elo_after;
+    document.getElementById('botElo').textContent = data.elo_after;
+    
+    setTimeout(() => {
+        if (confirm(data.message + '\n\nNouvelle partie ?')) {
+            newGame();
+        }
+    }, 500);
+}
+
+// Met à jour le statut
+function updateStatus(isCheck) {
+    const status = document.getElementById('gameStatus');
+    if (isCheck) {
+        status.innerHTML = '⚠️ ÉCHEC !';
+        status.style.background = '#fee2e2';
+        status.style.color = '#dc2626';
+    } else {
+        status.innerHTML = '▶️ Au tour des Blancs (Vous)';
+        status.style.background = '#f3f4f6';
+        status.style.color = '#333';
+    }
+}
+
+// Nouvelle partie
+function newGame() {
+    if (confirm('Commencer une nouvelle partie ?')) {
+        initGame();
+        document.getElementById('gameStatus').innerHTML = '▶️ Au tour des Blancs (Vous)';
+    }
+}
+
+// Annuler un coup
+function undoMove() {
+    alert('⚠️ Fonction en développement');
+}
+
+// Initialisation au chargement
+initGame();
+</script>
+{% endblock %}
