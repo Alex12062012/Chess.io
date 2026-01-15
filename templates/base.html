@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}chess.io{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,27 +15,35 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #302e2b;
             min-height: 100vh;
-            color: #333;
+            color: #fff;
         }
 
-        /* NAVBAR */
+        /* NAVBAR STYLE CHESS.COM */
         .navbar {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 1rem 2rem;
+            background: #262421;
+            padding: 0.8rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border-bottom: 1px solid #3d3b38;
         }
 
         .navbar-brand {
             font-size: 1.8rem;
-            font-weight: bold;
-            color: #667eea;
+            font-weight: 800;
+            color: #81b64c;
             text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand:hover {
+            color: #9ac95a;
         }
 
         .navbar-menu {
@@ -49,65 +60,67 @@
 
         .navbar-username {
             font-weight: 600;
-            color: #667eea;
+            color: #b8b6b3;
+            font-size: 0.95rem;
         }
 
         .btn {
-            padding: 0.6rem 1.2rem;
+            padding: 0.6rem 1.3rem;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.95rem;
             text-decoration: none;
             display: inline-block;
-            transition: all 0.3s;
-            font-weight: 500;
+            transition: all 0.2s;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
         }
 
         .btn-primary {
-            background: #667eea;
-            color: white;
+            background: #81b64c;
+            color: #fff;
         }
 
         .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: #9ac95a;
+            transform: translateY(-1px);
         }
 
         .btn-secondary {
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
+            background: transparent;
+            color: #b8b6b3;
+            border: 2px solid #3d3b38;
         }
 
         .btn-secondary:hover {
-            background: #667eea;
-            color: white;
+            background: #3d3b38;
+            color: #fff;
         }
 
         .btn-danger {
-            background: #ef4444;
+            background: #cc3f3f;
             color: white;
         }
 
         .btn-danger:hover {
-            background: #dc2626;
+            background: #b33636;
         }
 
         /* CONTAINER */
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 2rem auto;
-            padding: 0 1rem;
+            padding: 0 2rem;
         }
 
         .card {
-            background: white;
-            border-radius: 16px;
+            background: #262421;
+            border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             margin-bottom: 2rem;
+            border: 1px solid #3d3b38;
         }
 
         /* UTILITIES */
@@ -124,21 +137,21 @@
         }
 
         .error {
-            background: #fee2e2;
-            color: #dc2626;
+            background: rgba(204, 63, 63, 0.2);
+            color: #ff6b6b;
             padding: 0.8rem;
             border-radius: 8px;
             margin-bottom: 1rem;
-            border-left: 4px solid #dc2626;
+            border-left: 4px solid #cc3f3f;
         }
 
         .success {
-            background: #d1fae5;
-            color: #059669;
+            background: rgba(129, 182, 76, 0.2);
+            color: #9ac95a;
             padding: 0.8rem;
             border-radius: 8px;
             margin-bottom: 1rem;
-            border-left: 4px solid #059669;
+            border-left: 4px solid #81b64c;
         }
 
         /* FORMS */
@@ -150,22 +163,26 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #374151;
+            color: #b8b6b3;
+            font-size: 0.9rem;
         }
 
         .form-control {
             width: 100%;
             padding: 0.8rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
+            border: 2px solid #3d3b38;
+            border-radius: 6px;
             font-size: 1rem;
+            background: #1a1917;
+            color: #fff;
             transition: border-color 0.3s;
+            font-family: 'Inter', sans-serif;
         }
 
         .form-control:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #81b64c;
+            background: #262421;
         }
 
         /* RESPONSIVE */
@@ -173,6 +190,7 @@
             .navbar {
                 flex-direction: column;
                 gap: 1rem;
+                padding: 1rem;
             }
 
             .navbar-menu {
@@ -191,14 +209,19 @@
 <body>
     <!-- NAVBAR -->
     <nav class="navbar">
-        <a href="/" class="navbar-brand">♔ chess.io</a>
+        <a href="/" class="navbar-brand">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 22H5c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v16c0 1.1-.9 2-2 2zM5 4v16h14V4H5zm7 14c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
+            </svg>
+            chess.io
+        </a>
         
         <div class="navbar-menu">
             {% if logged_in %}
                 <div class="navbar-user">
-                    <span class="navbar-username">👤 {{ username }}</span>
-                    <a href="/ranked" class="btn btn-primary">Mode Classé</a>
-                    <a href="/logout" class="btn btn-danger">Déconnexion</a>
+                    <span class="navbar-username">{{ username }}</span>
+                    <a href="/ranked" class="btn btn-primary">Jouer</a>
+                    <a href="/logout" class="btn btn-secondary">Déconnexion</a>
                 </div>
             {% else %}
                 <a href="/login" class="btn btn-secondary">Connexion</a>
