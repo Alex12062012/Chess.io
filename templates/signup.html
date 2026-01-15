@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Inscription - chess.io{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-container {
+        max-width: 450px;
+        margin: 4rem auto;
+    }
+
+    .auth-card {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .auth-title {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-subtitle {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.9rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 1rem;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+        color: #666;
+    }
+
+    .auth-footer a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .error-message {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #dc2626;
+        font-weight: 500;
+    }
+
+    .input-icon {
+        position: relative;
+    }
+
+    .input-icon input {
+        padding-left: 2.5rem;
+    }
+
+    .input-icon::before {
+        content: attr(data-icon);
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2rem;
+        color: #9ca3af;
+    }
+
+    .info-box {
+        background: #dbeafe;
+        color: #1e40af;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #3b82f6;
+        font-size: 0.9rem;
+    }
+
+    .info-box ul {
+        margin: 0.5rem 0 0 1.2rem;
+        padding: 0;
+    }
+
+    .info-box li {
+        margin: 0.3rem 0;
+    }
+
+    .form-hint {
+        font-size: 0.85rem;
+        color: #9ca3af;
+        margin-top: 0.3rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">✨</div>
+            <h1 class="auth-title">Créer un compte</h1>
+            <p class="auth-subtitle">Rejoignez chess.io et commencez à jouer !</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        <div class="info-box">
+            ℹ️ <strong>Votre compte vous permettra :</strong>
+            <ul>
+                <li>Jouer en mode classé</li>
+                <li>Gagner de l'ELO (départ à 1000)</li>
+                <li>Suivre votre progression</li>
+                <li>Voir votre historique de parties</li>
+            </ul>
+        </div>
+
+        <form method="POST" action="/signup" id="signupForm">
+            <div class="form-group">
+                <label class="form-label">Nom d'utilisateur</label>
+                <div class="input-icon" data-icon="👤">
+                    <input 
+                        type="text" 
+                        name="username" 
+                        class="form-control" 
+                        placeholder="Choisissez un nom d'utilisateur"
+                        required
+                        minlength="3"
+                        maxlength="20"
+                        autofocus
+                        id="username"
+                    >
+                </div>
+                <div class="form-hint">Minimum 3 caractères</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mot de passe</label>
+                <div class="input-icon" data-icon="🔒">
+                    <input 
+                        type="password" 
+                        name="password" 
+                        class="form-control" 
+                        placeholder="Choisissez un mot de passe"
+                        required
+                        minlength="6"
+                        id="password"
+                    >
+                </div>
+                <div class="form-hint">Minimum 6 caractères</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Confirmer le mot de passe</label>
+                <div class="input-icon" data-icon="🔒">
+                    <input 
+                        type="password" 
+                        name="password_confirm" 
+                        class="form-control" 
+                        placeholder="Confirmez votre mot de passe"
+                        required
+                        id="password_confirm"
+                    >
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Créer mon compte →
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Vous avez déjà un compte ? 
+            <a href="/login">Se connecter</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Validation côté client
+    document.getElementById('signupForm').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const passwordConfirm = document.getElementById('password_confirm').value;
+        const username = document.getElementById('username').value;
+
+        // Vérifier que les mots de passe correspondent
+        if (password !== passwordConfirm) {
+            e.preventDefault();
+            alert('⚠️ Les mots de passe ne correspondent pas !');
+            return false;
+        }
+
+        // Vérifier la longueur du nom d'utilisateur
+        if (username.length < 3) {
+            e.preventDefault();
+            alert('⚠️ Le nom d\'utilisateur doit faire au moins 3 caractères !');
+            return false;
+        }
+
+        // Vérifier la longueur du mot de passe
+        if (password.length < 6) {
+            e.preventDefault();
+            alert('⚠️ Le mot de passe doit faire au moins 6 caractères !');
+            return false;
+        }
+    });
+
+    // Indicateur visuel de correspondance des mots de passe
+    document.getElementById('password_confirm').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const passwordConfirm = this.value;
+        
+        if (passwordConfirm.length > 0) {
+            if (password === passwordConfirm) {
+                this.style.borderColor = '#10b981';
+            } else {
+                this.style.borderColor = '#ef4444';
+            }
+        } else {
+            this.style.borderColor = '#e5e7eb';
+        }
+    });
+</script>
+{% endblock %}
