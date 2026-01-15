@@ -414,6 +414,21 @@ def get_legal_moves():
         'legal_moves': [chess.square_name(sq) for sq in legal_moves]
     })
 
+@app.route('/api/stats')
+def get_stats():
+    """Retourne les statistiques globales en temps réel"""
+    db = get_db()
+    
+    stats = {
+        'total_games': db.execute('SELECT COUNT(*) as count FROM games').fetchone()['count'],
+        'total_players': db.execute('SELECT COUNT(*) as count FROM users').fetchone()['count'],
+        'active_rooms': db.execute("SELECT COUNT(*) as count FROM rooms WHERE status = 'playing'").fetchone()['count']
+    }
+    
+    db.close()
+    
+    return jsonify(stats)
+
 # ========================================
 # WEBSOCKETS (Salons privés)
 # ========================================
