@@ -249,11 +249,15 @@ def create_room():
     """Créer un salon privé"""
     code = secrets.token_hex(3).upper()
     
-    db = get_db()
-    db.execute('INSERT INTO rooms (code, board_state, player_white) VALUES (?, ?, ?)',
-              (code, chess.Board().fen(), session.get('username', 'Invité')))
-    db.commit()
-    db.close()
+    try:
+        db = get_db()
+        db.execute('INSERT INTO rooms (code, board_state, player_white) VALUES (?, ?, ?)',
+                  (code, chess.Board().fen(), session.get('username', 'Invité')))
+        db.commit()
+        db.close()
+    except Exception as e:
+        print(f"Erreur création salon: {e}")
+        return f"Erreur: {e}", 500
     
     return redirect(url_for('room', code=code))
 
@@ -483,10 +487,9 @@ def on_leave(data):
 # INITIALISATION
 # ========================================
 
+# Initialise la BDD au démarrage
+init_db()
+
 if __name__ == '__main__':
-    # Crée la base de données si elle n'existe pas
-    if not os.path.exists(DATABASE):
-        init_db()
-    
     # Lance l'application
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
