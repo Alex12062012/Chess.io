@@ -27,64 +27,77 @@
 
     .chess-board {
         display: grid;
-        grid-template-columns: repeat(8, 60px);
-        grid-template-rows: repeat(8, 60px);
-        border: 3px solid #333;
+        grid-template-columns: repeat(8, 70px);
+        grid-template-rows: repeat(8, 70px);
+        border: 4px solid #3d3b38;
         margin: 0 auto;
         width: fit-content;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
     .square {
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 40px;
+        font-size: 50px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s;
         user-select: none;
         position: relative;
     }
 
-    .square.light { background-color: #f0d9b5; }
-    .square.dark { background-color: #b58863; }
+    .square.light { 
+        background-color: #eeeed2;
+    }
+    
+    .square.dark { 
+        background-color: #769656;
+    }
 
     .square.selected {
-        background-color: #7fc97f !important;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        background-color: #baca44 !important;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
     }
 
     .square.legal-move {
-        background-color: #90ee90 !important;
+        position: relative;
     }
 
     .square.legal-move::after {
-        content: '●';
+        content: '';
         position: absolute;
-        color: rgba(0,0,0,0.3);
-        font-size: 20px;
+        width: 22px;
+        height: 22px;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 50%;
+    }
+
+    .square.legal-move.has-piece::after {
+        width: 64px;
+        height: 64px;
+        background: transparent;
+        border: 4px solid rgba(0, 0, 0, 0.15);
+        border-radius: 50%;
     }
 
     .square.check {
-        background-color: #ff6b6b !important;
-        animation: pulse 1s infinite;
+        background: radial-gradient(ellipse at center, #f44336 0%, #d32f2f 100%) !important;
+        animation: checkPulse 1.5s infinite;
     }
 
-    .square:hover {
-        opacity: 0.9;
-        transform: scale(1.05);
+    .square.last-move {
+        background-color: rgba(255, 255, 0, 0.4) !important;
     }
 
-    .square.dragging {
-        opacity: 0.5;
-        cursor: grabbing !important;
+    .square:hover:not(.selected) {
+        filter: brightness(0.95);
     }
 
-    @keyframes pulse {
+    @keyframes checkPulse {
         0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+        50% { opacity: 0.8; }
     }
 
     .elo-display {
