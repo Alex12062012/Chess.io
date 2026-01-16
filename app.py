@@ -348,11 +348,7 @@ def make_move():
     if board.is_game_over():
         return handle_game_over(board, session['user_id'])
     
-    # Attendre 800ms avant que le bot joue (simule la réflexion)
-    import time
-    time.sleep(0.8)
-    
-    # Coup du bot
+    # Coup du bot (SANS délai ici - le délai sera géré côté client)
     bot_elo = session.get('elo', 1000)
     bot_move = get_bot_move(board.fen(), bot_elo)
     
@@ -520,4 +516,4 @@ init_db()
 
 if __name__ == '__main__':
     # Lance l'application
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)ort=5000, debug=True)
