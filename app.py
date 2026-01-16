@@ -88,15 +88,15 @@ def calculate_elo_change(player_elo, opponent_elo, win):
     return round(K * (actual - expected))
 
 def get_bot_depth(elo):
-    """Retourne la profondeur Stockfish selon l'ELO (réajusté pour être plus réaliste)"""
+    """Retourne la profondeur Stockfish selon l'ELO (réajusté - bots plus forts)"""
     if elo < 600:
-        return 1   # Très débutant
+        return 2   # Très débutant
     elif elo < 800:
-        return 2   # Débutant
+        return 4   # Débutant
     elif elo < 1000:
-        return 5   # Novice
+        return 6   # Novice
     elif elo < 1200:
-        return 8   # Amateur
+        return 8   # Amateur (1000 ELO = profondeur 8)
     elif elo < 1400:
         return 11  # Intermédiaire
     elif elo < 1600:
@@ -303,10 +303,16 @@ def room(code):
         db.close()
         return redirect(url_for('home'))
     
-    # Assigne le joueur noir si c'est un nouveau joueur
-    if not room_data['player_black'] and session.get('username') != room_data['player_white']:
+    current_user = session.get('username', 'Invité')
+    
+    # Si le joueur blanc n'est pas défini (ne devrait jamais arriver)
+    if not room_data['player_white']:
+        db.execute('UPDATE rooms SET player_white = ? WHERE code = ?', (current_user, code))
+        db.commit()
+    # Si c'est un nouveau joueur et qu'il n'y a pas encore de joueur noir
+    elif not room_data['player_black'] and current_user != room_data['player_white']:
         db.execute('UPDATE rooms SET player_black = ?, status = ? WHERE code = ?',
-                  (session.get('username', 'Invité'), 'playing', code))
+                  (current_user, 'playing', code))
         db.commit()
         room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
     
