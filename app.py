@@ -137,6 +137,8 @@ def get_bot_move(board_fen, elo):
     """Obtient le coup du bot selon l'ELO"""
     try:
         board = chess.Board(board_fen)
+        if board.is_game_over():
+            return None
         engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
         depth = get_bot_depth(elo)
         result = engine.play(board, chess.engine.Limit(depth=depth))
@@ -147,6 +149,8 @@ def get_bot_move(board_fen, elo):
         # Fallback : coup aléatoire
         import random
         board = chess.Board(board_fen)
+        if board.is_game_over():
+            return None
         legal_moves = list(board.legal_moves)
         return random.choice(legal_moves).uci() if legal_moves else None
 
@@ -201,6 +205,10 @@ def signup():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        password_confirm = request.form.get('password_confirm')
+        
+        if password != password_confirm:
+            return render_template('signup.html', error="Les mots de passe ne correspondent pas")
         
         if len(username) < 3:
             return render_template('signup.html', error="Le nom doit faire au moins 3 caractères")
@@ -255,11 +263,12 @@ def ranked():
 def create_room():
     """Créer un salon privé"""
     code = secrets.token_hex(3).upper()
+    current_user = session.get('username', 'Invité')
     
     try:
         db = get_db()
         db.execute('INSERT INTO rooms (code, board_state, player_white) VALUES (?, ?, ?)',
-                  (code, chess.Board().fen(), session.get('username', 'Invité')))
+                  (code, chess.Board().fen(), current_user))
         db.commit()
         db.close()
     except Exception as e:
@@ -318,7 +327,7 @@ def room(code):
     
     db.close()
     
-    return render_template('room.html', room=room_data, code=code)
+    return render_template('room.html', room=room_data, code=code, current_user=current_user)
 
 # ========================================
 # API ENDPOINTS
@@ -376,7 +385,7 @@ def handle_game_over(board, user_id):
     
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    bot_elo = user['elo']
+    bot_elo = user['elo']  # CORRIGÉ ICI
     elo_before = user['elo']
     
     # Détermine le résultat
@@ -408,9 +417,10 @@ def handle_game_over(board, user_id):
               (elo_after, peak_elo, games_won, user_id))
     
     # Sauvegarde la partie
+    moves_str = " ".join([move.uci() for move in board.move_stack])  # CORRIGÉ ICI
     db.execute('''INSERT INTO games (user_id, bot_elo, result, elo_before, elo_after, elo_change, moves)
                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
-              (user_id, bot_elo, result, elo_before, elo_after, elo_change, board.move_stack.__str__()))
+              (user_id, bot_elo, result, elo_before, elo_after, elo_change, moves_str))
     
     db.commit()
     db.close()
