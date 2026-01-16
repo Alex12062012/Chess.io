@@ -233,22 +233,6 @@ def ranked():
                          games=recent_games,
                          rank=get_rank_name(user['elo']))
 
-@app.route('/create-room')
-def create_room():
-    code = secrets.token_hex(3).upper()
-    
-    try:
-        db = get_db()
-        db.execute('INSERT INTO rooms (code, board_state, player_white) VALUES (?, ?, ?)',
-                  (code, chess.Board().fen(), session.get('username', 'Invité')))
-        db.commit()
-        db.close()
-    except Exception as e:
-        print(f"Erreur création salon: {e}")
-        return f"Erreur: {e}", 500
-    
-    return redirect(url_for('room', code=code))
-
 @app.route('/join-room', methods=['POST'])
 def join_room_route():
     code = request.form.get('code', '').upper().strip()
@@ -260,18 +244,9 @@ def join_room_route():
                              stats=get_home_stats(),
                              error_modal="Code invalide. Le code doit faire 6 caractères.")
     
-    db = get_db()
-    room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
-    db.close()
-    
-    if room_data:
-        return redirect(url_for('room', code=code))
-    else:
-        return render_template('home.html', 
-                             logged_in='user_id' in session,
-                             username=session.get('username'),
-                             stats=get_home_stats(),
-                             error_modal=f"Salon '{code}' introuvable.")
+    # Redirige directement vers le salon
+    # Pas besoin de vérifier s'il existe, il sera créé automatiquement
+    return redirect(url_for('room', code=code))
 
 @app.route('/room/<code>')
 def room(code):
