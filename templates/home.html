@@ -270,10 +270,16 @@ setInterval(async function() {
 </script>
 
 <!-- Modal pour rejoindre un salon -->
-<div id="joinModal" class="modal">
+<div id="joinModal" class="modal {% if error_modal %}active{% endif %}">
     <div class="modal-content">
         <span class="modal-close" onclick="closeJoinModal()">×</span>
         <div class="modal-header">🎲 Rejoindre un salon</div>
+        
+        {% if error_modal %}
+        <div style="background: rgba(204, 63, 63, 0.2); color: #ff6b6b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #cc3f3f;">
+            ⚠️ {{ error_modal }}
+        </div>
+        {% endif %}
         
         <form method="POST" action="/join-room">
             <div class="form-group">
@@ -285,7 +291,7 @@ setInterval(async function() {
                     placeholder="Ex: A3F9K2"
                     maxlength="6"
                     required
-                    style="text-transform: uppercase; text-align: center; font-size: 1.5rem; letter-spacing: 0.3rem;"
+                    style="text-transform: uppercase; text-align: center; font-size: 1.8rem; letter-spacing: 0.5rem; font-weight: 700;"
                 >
             </div>
             <button type="submit" class="option-button primary">
