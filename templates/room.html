@@ -11,12 +11,17 @@
 
     .room-header {
         background: #262421;
-        border-radius: 12px;
+        border: 2px solid #3d3b38;
+        border-radius: 16px;
         padding: 2rem;
         margin-bottom: 2rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         text-align: center;
-        border: 1px solid #3d3b38;
+    }
+
+    .room-header h2 {
+        color: #b8b6b3;
+        margin-bottom: 1rem;
     }
 
     .room-code {
@@ -33,7 +38,8 @@
         padding: 1rem;
         border-radius: 8px;
         margin-top: 1rem;
-        color: #9ac95a;
+        color: #81b64c;
+        border: 1px solid #81b64c;
     }
 
     .copy-btn {
@@ -62,18 +68,18 @@
 
     .player-info {
         background: #262421;
-        border-radius: 12px;
+        border: 2px solid #3d3b38;
+        border-radius: 16px;
         padding: 1.5rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         text-align: center;
-        border: 1px solid #3d3b38;
     }
 
     .player-name {
         font-size: 1.5rem;
         font-weight: bold;
         margin-bottom: 0.5rem;
-        color: #fff;
+        color: #b8b6b3;
     }
 
     .player-color {
@@ -85,13 +91,14 @@
     }
 
     .player-white {
-        background: #eeeed2;
-        color: #333;
+        background: #3d3b38;
+        color: #eeeed2;
     }
 
     .player-black {
-        background: #769656;
-        color: white;
+        background: #1a1917;
+        color: #b8b6b3;
+        border: 2px solid #3d3b38;
     }
 
     .waiting-player {
@@ -102,10 +109,10 @@
 
     .chess-board-wrapper {
         background: #262421;
-        border-radius: 12px;
+        border: 2px solid #3d3b38;
+        border-radius: 16px;
         padding: 2rem;
         box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        border: 1px solid #3d3b38;
     }
 
     .chess-board {
@@ -115,7 +122,7 @@
         border: 4px solid #3d3b38;
         margin: 0 auto;
         width: fit-content;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
 
     .square {
@@ -133,8 +140,10 @@
     .piece-img {
         width: 52px;
         height: 52px;
-        pointer-events: none;
         filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        position: absolute;
+        pointer-events: none !important;
+        -webkit-user-drag: none;
     }
 
     .square.light { background-color: #eeeed2; }
@@ -145,39 +154,17 @@
         box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
     }
 
-    .square.legal-move {
-        position: relative;
-    }
-
     .square.legal-move::after {
         content: '';
         position: absolute;
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         background: rgba(0, 0, 0, 0.15);
         border-radius: 50%;
     }
 
-    .square.legal-move.has-piece::after {
-        width: 64px;
-        height: 64px;
-        background: transparent;
-        border: 4px solid rgba(0, 0, 0, 0.15);
-        border-radius: 50%;
-    }
-
-    .square.check {
-        background: radial-gradient(ellipse at center, #f44336 0%, #d32f2f 100%) !important;
-        animation: pulse 1s infinite;
-    }
-
     .square:hover {
-        filter: brightness(0.95);
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+        opacity: 0.9;
     }
 
     .game-status {
@@ -191,76 +178,6 @@
         color: #b8b6b3;
     }
 
-    .chat-section {
-        background: #262421;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        height: 400px;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #3d3b38;
-    }
-
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        margin-bottom: 1rem;
-        padding: 1rem;
-        background: #1a1917;
-        border-radius: 8px;
-    }
-
-    .chat-message {
-        padding: 0.5rem;
-        margin-bottom: 0.5rem;
-        border-radius: 4px;
-        font-size: 0.9rem;
-    }
-
-    .chat-message.system {
-        background: rgba(129, 182, 76, 0.1);
-        color: #9ac95a;
-        text-align: center;
-        font-style: italic;
-    }
-
-    .chat-input {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .chat-input input {
-        flex: 1;
-        padding: 0.8rem;
-        border: 2px solid #3d3b38;
-        border-radius: 8px;
-        font-size: 1rem;
-        background: #1a1917;
-        color: #fff;
-    }
-
-    .chat-input button {
-        padding: 0.8rem 1.5rem;
-        background: #81b64c;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-    .chat-input button:hover {
-        background: #9ac95a;
-    }
-
-    .game-controls {
-        display: flex;
-        flex-direction: column;
-        gap: 0.8rem;
-        margin-top: 1rem;
-    }
-
     .control-btn {
         padding: 0.8rem;
         border: none;
@@ -268,14 +185,14 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s;
-    }
-
-    .control-btn.danger {
+        width: 100%;
+        margin-top: 1rem;
         background: #cc3f3f;
         color: white;
+        font-family: 'Inter', sans-serif;
     }
 
-    .control-btn.danger:hover {
+    .control-btn:hover {
         background: #b33636;
     }
 
@@ -289,7 +206,6 @@
 
 {% block content %}
 <div class="room-container">
-    <!-- En-tête du salon -->
     <div class="room-header">
         <h2>🔒 Salon Privé</h2>
         <div class="room-code">{{ code }}</div>
@@ -302,15 +218,13 @@
             📋 Copier le code
         </button>
         {% else %}
-        <div class="share-info" style="background: rgba(129, 182, 76, 0.1); color: #9ac95a;">
+        <div class="share-info" style="background: rgba(129, 182, 76, 0.2); color: #9ac95a; border-color: #9ac95a;">
             ✅ Les deux joueurs sont présents - La partie peut commencer !
         </div>
         {% endif %}
     </div>
 
-    <!-- Layout du jeu -->
     <div class="game-layout">
-        <!-- Joueur Blanc -->
         <div class="player-info">
             <div class="player-name">
                 {% if room.player_white %}
@@ -322,7 +236,6 @@
             <div class="player-color player-white">♔ Blancs</div>
         </div>
 
-        <!-- Échiquier -->
         <div class="chess-board-wrapper">
             <div class="game-status" id="gameStatus">
                 {% if room.status == 'waiting' %}
@@ -332,18 +245,13 @@
                 {% endif %}
             </div>
 
-            <div class="chess-board" id="chessBoard">
-                <!-- Généré par JavaScript -->
-            </div>
+            <div class="chess-board" id="chessBoard"></div>
 
-            <div class="game-controls">
-                <button class="control-btn danger" onclick="leaveRoom()">
-                    🚪 Quitter le salon
-                </button>
-            </div>
+            <button class="control-btn" onclick="leaveRoom()">
+                🚪 Quitter le salon
+            </button>
         </div>
 
-        <!-- Joueur Noir -->
         <div class="player-info">
             <div class="player-name">
                 {% if room.player_black %}
@@ -355,24 +263,9 @@
             <div class="player-color player-black">♚ Noirs</div>
         </div>
     </div>
-
-    <!-- Chat (optionnel, caché pour l'instant) -->
-    <div class="chat-section" style="display: none; margin-top: 2rem;">
-        <h3>💬 Chat</h3>
-        <div class="chat-messages" id="chatMessages">
-            <div class="chat-message system">
-                Salon créé. En attente du deuxième joueur...
-            </div>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="chatInput" placeholder="Votre message...">
-            <button onclick="sendMessage()">Envoyer</button>
-        </div>
-    </div>
 </div>
 
 <script>
-// Mapping des pièces vers les images SVG (style Chess.com)
 const PIECE_IMAGES = {
     'P': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png',
     'N': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png',
@@ -388,23 +281,19 @@ const PIECE_IMAGES = {
     'k': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bk.png'
 };
 
-// Configuration WebSocket
 const socket = io();
 const roomCode = '{{ code }}';
 
-// État du jeu
 let board = '{{ room.board_state }}';
 let selectedSquare = null;
 let legalMoves = [];
-let myColor = null; // 'white' ou 'black'
+let myColor = null;
 let currentTurn = '{{ room.current_turn }}';
 
-// Initialisation
 window.onload = function() {
-    // Détermine la couleur du joueur
     const playerWhite = '{{ room.player_white }}';
     const playerBlack = '{{ room.player_black }}';
-    const myUsername = '{{ current_user }}';  // CORRIGÉ ICI
+    const myUsername = '{{ session.username if session.username else "Invité" }}';
     
     if (myUsername === playerWhite) {
         myColor = 'white';
@@ -412,17 +301,12 @@ window.onload = function() {
         myColor = 'black';
     }
     
-    // Rejoint le salon via WebSocket
     socket.emit('join', { room: roomCode });
-    
-    // Affiche l'échiquier
     renderBoard();
 };
 
-// Événements WebSocket
 socket.on('player_joined', function(data) {
-    addSystemMessage(data.username + ' a rejoint le salon');
-    updateStatus();
+    console.log(data.username + ' a rejoint');
 });
 
 socket.on('move_made', function(data) {
@@ -434,20 +318,9 @@ socket.on('move_made', function(data) {
     
     if (data.game_over) {
         handleGameOver(data.result);
-    } else {
-        updateStatus(data.is_check);
     }
 });
 
-socket.on('player_left', function(data) {
-    addSystemMessage(data.username + ' a quitté le salon');
-});
-
-socket.on('error', function(data) {
-    alert('❌ ' + data.message);
-});
-
-// Parse le FEN
 function parseFEN(fen) {
     const ranks = fen.split(' ')[0].split('/');
     const pieces = [];
@@ -466,18 +339,15 @@ function parseFEN(fen) {
             }
         }
     }
-    
     return pieces;
 }
 
-// Convertit index en notation
 function indexToSquare(index) {
     const file = index % 8;
     const rank = 7 - Math.floor(index / 8);
     return String.fromCharCode(97 + file) + (rank + 1);
 }
 
-// Affiche l'échiquier
 function renderBoard() {
     const boardEl = document.getElementById('chessBoard');
     boardEl.innerHTML = '';
@@ -490,20 +360,22 @@ function renderBoard() {
         const file = i % 8;
         
         square.className = 'square ' + ((rank + file) % 2 === 0 ? 'light' : 'dark');
-        square.dataset.index = i;
-        square.dataset.square = indexToSquare(i);
+        const squareName = indexToSquare(i);
+        square.dataset.square = squareName;
+        square.dataset.piece = pieces[i] || '';
         
         if (pieces[i]) {
             const img = document.createElement('img');
             img.src = PIECE_IMAGES[pieces[i]];
             img.className = 'piece-img';
-            img.alt = pieces[i];
+            img.draggable = false;
             square.appendChild(img);
         }
         
-        // Gestion des clics seulement si c'est notre tour
         if (isMyTurn()) {
-            square.addEventListener('click', handleSquareClick);
+            square.onclick = function() {
+                handleSquareClick(squareName, pieces[i] || '');
+            };
         }
         
         boardEl.appendChild(square);
@@ -512,13 +384,11 @@ function renderBoard() {
     updateVisualState();
 }
 
-// Vérifie si c'est notre tour
 function isMyTurn() {
     if (!myColor) return false;
     return currentTurn === myColor;
 }
 
-// Met à jour l'état visuel
 function updateVisualState() {
     document.querySelectorAll('.square').forEach(sq => {
         sq.classList.remove('selected', 'legal-move');
@@ -535,47 +405,25 @@ function updateVisualState() {
     }
 }
 
-// Gère le clic sur une case
-async function handleSquareClick(e) {
+async function handleSquareClick(square, piece) {
     if (!isMyTurn()) return;
     
-    const square = e.currentTarget.dataset.square;
-    
-    // Si aucune pièce sélectionnée
     if (selectedSquare === null) {
-        const pieceImg = e.currentTarget.querySelector('.piece-img');
-        if (pieceImg) {
-            const piece = pieceImg.alt;
-            const myPieces = myColor === 'white' ? 
-                'PNBRQK' : 'pnbrqk';
-            
-            if (myPieces.includes(piece)) {
-                selectedSquare = square;
-                await fetchLegalMoves(square);
-                updateVisualState();
-            }
+        const myPieces = myColor === 'white' ? 'PNBRQK' : 'pnbrqk';
+        if (piece && myPieces.includes(piece)) {
+            selectedSquare = square;
+            await fetchLegalMoves(square);
+            updateVisualState();
         }
     } else {
-        // Tentative de déplacement
         if (legalMoves.includes(square)) {
             makeMove(selectedSquare + square);
         } else {
-            // Nouvelle sélection ?
-            const pieceImg = e.currentTarget.querySelector('.piece-img');
-            if (pieceImg) {
-                const piece = pieceImg.alt;
-                const myPieces = myColor === 'white' ? 
-                    'PNBRQK' : 'pnbrqk';
-                
-                if (myPieces.includes(piece)) {
-                    selectedSquare = square;
-                    await fetchLegalMoves(square);
-                    updateVisualState();
-                } else {
-                    selectedSquare = null;
-                    legalMoves = [];
-                    updateVisualState();
-                }
+            const myPieces = myColor === 'white' ? 'PNBRQK' : 'pnbrqk';
+            if (piece && myPieces.includes(piece)) {
+                selectedSquare = square;
+                await fetchLegalMoves(square);
+                updateVisualState();
             } else {
                 selectedSquare = null;
                 legalMoves = [];
@@ -585,7 +433,6 @@ async function handleSquareClick(e) {
     }
 }
 
-// Récupère les coups légaux
 async function fetchLegalMoves(square) {
     try {
         const response = await fetch('/api/get-legal-moves', {
@@ -596,12 +443,10 @@ async function fetchLegalMoves(square) {
         const data = await response.json();
         legalMoves = data.legal_moves || [];
     } catch (error) {
-        console.error('Erreur:', error);
         legalMoves = [];
     }
 }
 
-// Fait un coup
 function makeMove(move) {
     socket.emit('move', {
         room: roomCode,
@@ -613,22 +458,6 @@ function makeMove(move) {
     legalMoves = [];
 }
 
-// Met à jour le statut
-function updateStatus(isCheck) {
-    const status = document.getElementById('gameStatus');
-    if (isCheck) {
-        status.innerHTML = '⚠️ ÉCHEC !';
-        status.style.background = 'rgba(244, 67, 54, 0.2)';
-        status.style.color = '#f44336';
-    } else {
-        const turn = currentTurn === 'white' ? 'Blancs' : 'Noirs';
-        status.innerHTML = `▶️ Au tour des ${turn}`;
-        status.style.background = '#1a1917';
-        status.style.color = '#b8b6b3';
-    }
-}
-
-// Gère la fin de partie
 function handleGameOver(result) {
     let message = '';
     if (result === '1-0') {
@@ -643,25 +472,11 @@ function handleGameOver(result) {
     setTimeout(() => alert(message), 500);
 }
 
-// Ajoute un message système
-function addSystemMessage(text) {
-    const chatMessages = document.getElementById('chatMessages');
-    if (chatMessages) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'chat-message system';
-        msgDiv.textContent = text;
-        chatMessages.appendChild(msgDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-}
-
-// Copie le code du salon
 function copyCode() {
     navigator.clipboard.writeText(roomCode);
     alert('✅ Code copié : ' + roomCode);
 }
 
-// Quitte le salon
 function leaveRoom() {
     if (confirm('Quitter le salon ?')) {
         socket.emit('leave', { room: roomCode });
@@ -669,7 +484,6 @@ function leaveRoom() {
     }
 }
 
-// Nettoyage à la fermeture
 window.onbeforeunload = function() {
     socket.emit('leave', { room: roomCode });
 };
