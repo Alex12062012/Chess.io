@@ -88,21 +88,27 @@ def calculate_elo_change(player_elo, opponent_elo, win):
     return round(K * (actual - expected))
 
 def get_bot_depth(elo):
-    """Retourne la profondeur Stockfish selon l'ELO"""
-    if elo < 800:
-        return 1
+    """Retourne la profondeur Stockfish selon l'ELO (réajusté pour être plus réaliste)"""
+    if elo < 600:
+        return 1   # Très débutant
+    elif elo < 800:
+        return 2   # Débutant
     elif elo < 1000:
-        return 3
+        return 5   # Novice
     elif elo < 1200:
-        return 6
+        return 8   # Amateur
     elif elo < 1400:
-        return 10
+        return 11  # Intermédiaire
     elif elo < 1600:
-        return 14
+        return 14  # Avancé
     elif elo < 1800:
-        return 18
+        return 17  # Expert
+    elif elo < 2000:
+        return 20  # Maître
+    elif elo < 2200:
+        return 23  # Grand Maître
     else:
-        return 20
+        return 25  # Super GM
 
 def get_rank_name(elo):
     """Retourne le rang selon l'ELO"""
@@ -151,21 +157,22 @@ def get_bot_move(board_fen, elo):
 @app.route('/')
 def home():
     """Page d'accueil"""
+    return render_template('home.html', 
+                         logged_in='user_id' in session,
+                         username=session.get('username'),
+                         stats=get_home_stats(),
+                         error_modal=None)
+
+def get_home_stats():
+    """Récupère les stats pour la page d'accueil"""
     db = get_db()
-    
-    # Statistiques globales
     stats = {
         'total_games': db.execute('SELECT COUNT(*) as count FROM games').fetchone()['count'],
         'total_players': db.execute('SELECT COUNT(*) as count FROM users').fetchone()['count'],
         'active_rooms': db.execute("SELECT COUNT(*) as count FROM rooms WHERE status = 'playing'").fetchone()['count']
     }
-    
     db.close()
-    
-    return render_template('home.html', 
-                         logged_in='user_id' in session,
-                         username=session.get('username'),
-                         stats=stats)
+    return stats
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -266,6 +273,13 @@ def join_room_route():
     """Rejoindre un salon privé"""
     code = request.form.get('code', '').upper().strip()
     
+    if not code or len(code) != 6:
+        return render_template('home.html', 
+                             logged_in='user_id' in session,
+                             username=session.get('username'),
+                             stats=get_home_stats(),
+                             error_modal="Code invalide. Le code doit faire 6 caractères.")
+    
     db = get_db()
     room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
     db.close()
@@ -273,7 +287,11 @@ def join_room_route():
     if room_data:
         return redirect(url_for('room', code=code))
     else:
-        return redirect(url_for('home'))
+        return render_template('home.html', 
+                             logged_in='user_id' in session,
+                             username=session.get('username'),
+                             stats=get_home_stats(),
+                             error_modal=f"Salon '{code}' introuvable. Vérifiez le code.")
 
 @app.route('/room/<code>')
 def room(code):
