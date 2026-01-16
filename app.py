@@ -275,26 +275,21 @@ def join_room_route():
 
 @app.route('/room/<code>')
 def room(code):
+    """Page du salon - Simple : 2 personnes sur même URL = partie ensemble"""
     db = get_db()
     room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
     
+    # Si le salon n'existe pas, créer un nouveau
     if not room_data:
-        db.close()
-        return redirect(url_for('home'))
-    
-    current_user = session.get('username', 'Invité')
-    
-    if not room_data['player_white']:
-        db.execute('UPDATE rooms SET player_white = ? WHERE code = ?', (current_user, code))
-        db.commit()
-    elif not room_data['player_black'] and current_user != room_data['player_white']:
-        db.execute('UPDATE rooms SET player_black = ?, status = ? WHERE code = ?',
-                  (current_user, 'playing', code))
+        db.execute('INSERT INTO rooms (code, board_state) VALUES (?, ?)',
+                  (code, chess.Board().fen()))
         db.commit()
         room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
+        print(f"✅ Nouveau salon créé: {code}")
     
     db.close()
     
+    # Pas de gestion de joueurs côté serveur, tout se fait en WebSocket
     return render_template('room.html', room=room_data, code=code)
 
 # ========================================
@@ -415,11 +410,33 @@ def get_stats():
 # WEBSOCKETS (Salons privés)
 # ========================================
 
+# Dictionnaire pour tracker les joueurs connectés par salon
+room_players = {}
+
 @socketio.on('join')
 def on_join(data):
     room_code = data['room']
     join_room(room_code)
-    emit('player_joined', {'username': session.get('username', 'Invité')}, room=room_code)
+    
+    # Initialise le salon s'il n'existe pas
+    if room_code not in room_players:
+        room_players[room_code] = []
+    
+    # Ajoute le joueur
+    room_players[room_code].append(request.sid)
+    player_count = len(room_players[room_code])
+    
+    print(f"✅ Joueur rejoint {room_code} - Total: {player_count} joueurs")
+    
+    # Assigne les couleurs selon l'ordre d'arrivée
+    if player_count == 1:
+        emit('assign_color', {'color': 'white', 'message': 'Vous jouez les Blancs'})
+        emit('player_joined', {'count': player_count, 'message': 'En attente du joueur 2...'}, room=room_code)
+    elif player_count == 2:
+        emit('assign_color', {'color': 'black', 'message': 'Vous jouez les Noirs'})
+        emit('game_start', {'message': 'Les 2 joueurs sont là ! La partie commence !'}, room=room_code)
+    else:
+        emit('assign_color', {'color': 'spectator', 'message': 'Vous êtes spectateur'})
 
 @socketio.on('move')
 def on_move(data):
@@ -434,8 +451,8 @@ def on_move(data):
             board.push(chess_move)
             
             db = get_db()
-            db.execute('UPDATE rooms SET board_state = ?, current_turn = ? WHERE code = ?',
-                      (board.fen(), 'black' if board.turn else 'white', room_code))
+            db.execute('UPDATE rooms SET board_state = ? WHERE code = ?',
+                      (board.fen(), room_code))
             db.commit()
             db.close()
             
@@ -449,11 +466,29 @@ def on_move(data):
     except:
         emit('error', {'message': 'Coup invalide'})
 
+@socketio.on('disconnect')
+def on_disconnect():
+    # Retire le joueur de tous les salons
+    for room_code in list(room_players.keys()):
+        if request.sid in room_players[room_code]:
+            room_players[room_code].remove(request.sid)
+            player_count = len(room_players[room_code])
+            print(f"❌ Joueur quitté {room_code} - Restants: {player_count}")
+            
+            emit('player_left', {'count': player_count}, room=room_code)
+            
+            # Nettoie les salons vides
+            if player_count == 0:
+                del room_players[room_code]
+
 @socketio.on('leave')
 def on_leave(data):
     room_code = data['room']
     leave_room(room_code)
-    emit('player_left', {'username': session.get('username', 'Invité')}, room=room_code)
+    
+    if room_code in room_players and request.sid in room_players[room_code]:
+        room_players[room_code].remove(request.sid)
+        emit('player_left', {'count': len(room_players[room_code])}, room=room_code)
 
 # ========================================
 # INITIALISATION
