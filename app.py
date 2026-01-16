@@ -348,7 +348,11 @@ def make_move():
     if board.is_game_over():
         return handle_game_over(board, session['user_id'])
     
-    # Coup du bot (SANS délai ici - le délai sera géré côté client)
+    # Attendre 800ms avant que le bot joue (simule la réflexion)
+    import time
+    time.sleep(0.8)
+    
+    # Coup du bot
     bot_elo = session.get('elo', 1000)
     bot_move = get_bot_move(board.fen(), bot_elo)
     
