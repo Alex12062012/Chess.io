@@ -271,12 +271,19 @@
     <div class="room-header">
         <h2>🔒 Salon Privé</h2>
         <div class="room-code">{{ code }}</div>
+        
+        {% if room.status == 'waiting' %}
         <div class="share-info">
             📤 Partagez ce code avec votre ami pour qu'il rejoigne la partie
         </div>
         <button class="copy-btn" onclick="copyCode()">
             📋 Copier le code
         </button>
+        {% else %}
+        <div class="share-info" style="background: #d1fae5; color: #059669;">
+            ✅ Les deux joueurs sont présents - La partie peut commencer !
+        </div>
+        {% endif %}
     </div>
 
     <!-- Layout du jeu -->
@@ -643,6 +650,9 @@ function leaveRoom() {
 // Nettoyage à la fermeture
 window.onbeforeunload = function() {
     socket.emit('leave', { room: roomCode });
+};
+</script>
+{% endblock %});
 };
 </script>
 {% endblock %}
