@@ -49,21 +49,25 @@
         position: relative;
     }
 
-    .piece-img {
-        width: 50px;
-        height: 50px;
-        pointer-events: none;
-        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
-        -webkit-user-drag: none;
-        user-select: none;
-    }
-
     .square.light { 
         background-color: #eeeed2;
     }
     
     .square.dark { 
         background-color: #769656;
+    }
+
+    .piece-img {
+        width: 50px;
+        height: 50px;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none !important;
+        -webkit-user-drag: none;
+        user-select: none;
     }
 
     .square.selected {
@@ -85,8 +89,8 @@
     }
 
     .square.legal-move.has-piece::after {
-        width: 64px;
-        height: 64px;
+        width: 54px;
+        height: 54px;
         background: transparent;
         border: 4px solid rgba(0, 0, 0, 0.15);
         border-radius: 50%;
@@ -97,12 +101,8 @@
         animation: checkPulse 1.5s infinite;
     }
 
-    .square.last-move {
-        background-color: rgba(255, 255, 0, 0.4) !important;
-    }
-
-    .square:hover:not(.selected) {
-        filter: brightness(0.95);
+    .square:active {
+        transform: scale(0.95);
     }
 
     @keyframes checkPulse {
@@ -195,26 +195,27 @@
     .history-title {
         font-weight: bold;
         margin-bottom: 1rem;
-        color: #333;
+        color: #b8b6b3;
     }
 
     .history-item {
         display: flex;
         justify-content: space-between;
         padding: 0.8rem;
-        background: #f9fafb;
+        background: #1a1917;
         border-radius: 8px;
         margin-bottom: 0.5rem;
         font-size: 0.9rem;
+        color: #7c7a77;
     }
 
     .history-result {
         font-weight: 600;
     }
 
-    .history-result.win { color: #10b981; }
-    .history-result.loss { color: #ef4444; }
-    .history-result.draw { color: #6b7280; }
+    .history-result.win { color: #81b64c; }
+    .history-result.loss { color: #cc3f3f; }
+    .history-result.draw { color: #7c7a77; }
 
     .stats-grid {
         display: grid;
@@ -224,36 +225,38 @@
     }
 
     .stat-box {
-        background: #f9fafb;
+        background: #1a1917;
         padding: 1rem;
         border-radius: 8px;
         text-align: center;
+        border: 1px solid #3d3b38;
     }
 
     .stat-value {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #667eea;
+        color: #81b64c;
     }
 
     .stat-label {
         font-size: 0.85rem;
-        color: #666;
+        color: #7c7a77;
         margin-top: 0.3rem;
     }
 
     .bot-info {
         text-align: center;
         padding: 1rem;
-        background: #f3f4f6;
+        background: #1a1917;
         border-radius: 10px;
         margin-bottom: 1rem;
+        border: 1px solid #3d3b38;
     }
 
     .bot-elo {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #ef4444;
+        color: #cc3f3f;
     }
 
     @media (max-width: 1200px) {
@@ -320,7 +323,7 @@
                 </div>
                 {% endfor %}
             {% else %}
-                <p style="text-align: center; color: #999;">Aucune partie jouée</p>
+                <p style="text-align: center; color: #7c7a77;">Aucune partie jouée</p>
             {% endif %}
         </div>
     </div>
@@ -328,7 +331,7 @@
     <!-- CENTRE : Échiquier -->
     <div class="chess-board-wrapper">
         <div class="bot-info">
-            <div style="color: #666; font-size: 0.9rem;">🤖 Adversaire</div>
+            <div style="color: #7c7a77; font-size: 0.9rem;">🤖 Adversaire</div>
             <div class="bot-elo">Bot ELO <span id="botElo">{{ user.elo }}</span></div>
         </div>
 
@@ -352,21 +355,21 @@
 
     <!-- SIDEBAR DROITE : Instructions -->
     <div class="sidebar-right">
-        <h3 style="margin-bottom: 1rem;">📖 Comment jouer</h3>
+        <h3 style="margin-bottom: 1rem; color: #b8b6b3;">📖 Comment jouer</h3>
         
-        <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-            <strong>🖱️ Contrôles :</strong>
-            <ul style="margin: 0.5rem 0 0 1.2rem; color: #666;">
+        <div style="background: #1a1917; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #3d3b38;">
+            <strong style="color: #b8b6b3;">🖱️ Contrôles :</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; color: #7c7a77;">
                 <li>Cliquez sur une pièce blanche</li>
                 <li>Cliquez sur une case verte</li>
                 <li>La pièce se déplace</li>
-                <li>Le bot répond automatiquement</li>
+                <li>Le bot répond après 800ms</li>
             </ul>
         </div>
 
-        <div style="background: #dbeafe; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-            <strong>📈 Système ELO :</strong>
-            <ul style="margin: 0.5rem 0 0 1.2rem; color: #1e40af;">
+        <div style="background: #1a1917; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px solid #3d3b38;">
+            <strong style="color: #81b64c;">📈 Système ELO :</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; color: #7c7a77;">
                 <li>Le bot s'adapte à votre niveau</li>
                 <li>Victoire : +15 ELO environ</li>
                 <li>Défaite : -15 ELO environ</li>
@@ -374,23 +377,24 @@
             </ul>
         </div>
 
-        <div style="background: #d1fae5; padding: 1rem; border-radius: 8px;">
-            <strong>🏆 Rangs :</strong>
-            <ul style="margin: 0.5rem 0 0 1.2rem; color: #059669; font-size: 0.9rem;">
-                <li>800 : ♟️ Débutant</li>
-                <li>1000 : ♘ Novice</li>
-                <li>1200 : ♗ Amateur</li>
-                <li>1400 : ♖ Intermédiaire</li>
-                <li>1600 : ♕ Avancé</li>
-                <li>1800 : ♔ Expert</li>
-                <li>2000 : 👑 Maître</li>
+        <div style="background: #1a1917; padding: 1rem; border-radius: 8px; border: 1px solid #3d3b38;">
+            <strong style="color: #b8b6b3;">🏆 Rangs :</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; color: #7c7a77; font-size: 0.9rem;">
+                <li>600 : Débutant</li>
+                <li>800 : Novice</li>
+                <li>1000 : Amateur</li>
+                <li>1200 : Intermédiaire</li>
+                <li>1400 : Avancé</li>
+                <li>1600 : Expert</li>
+                <li>1800 : Maître</li>
+                <li>2000+ : Grand Maître</li>
             </ul>
         </div>
     </div>
 </div>
 
 <script>
-// Mapping des pièces vers les images SVG (style Chess.com)
+// Mapping des pièces vers les images (style Chess.com)
 const PIECE_IMAGES = {
     'P': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png',
     'N': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png',
@@ -406,18 +410,11 @@ const PIECE_IMAGES = {
     'k': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bk.png'
 };
 
-// État du jeu
-let board = null;
-let selectedSquare = null;
-let legalMoves = [];
-let playerElo = {{ user.elo }};
-
-// Sons d'échecs
+// Sons Chess.com
 const sounds = {
     move: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3'),
     capture: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3'),
     check: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3'),
-    castle: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3'),
     gameEnd: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3')
 };
 
@@ -428,14 +425,17 @@ function playSound(type) {
     }
 }
 
-// Initialise le jeu
+// État du jeu
+let board = null;
+let selectedSquare = null;
+let legalMoves = [];
+let playerElo = {{ user.elo }};
+
 function initGame() {
-    // Position de départ
     board = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     renderBoard();
 }
 
-// Parse le FEN pour extraire les pièces
 function parseFEN(fen) {
     const ranks = fen.split(' ')[0].split('/');
     const pieces = [];
@@ -454,25 +454,15 @@ function parseFEN(fen) {
             }
         }
     }
-    
     return pieces;
 }
 
-// Convertit index en notation d'échecs
 function indexToSquare(index) {
     const file = index % 8;
     const rank = 7 - Math.floor(index / 8);
     return String.fromCharCode(97 + file) + (rank + 1);
 }
 
-// Convertit notation en index
-function squareToIndex(square) {
-    const file = square.charCodeAt(0) - 97;
-    const rank = parseInt(square[1]) - 1;
-    return (7 - rank) * 8 + file;
-}
-
-// Affiche l'échiquier
 function renderBoard() {
     const boardEl = document.getElementById('chessBoard');
     boardEl.innerHTML = '';
@@ -494,13 +484,12 @@ function renderBoard() {
             img.src = PIECE_IMAGES[pieces[i]];
             img.className = 'piece-img';
             img.draggable = false;
-            img.onmousedown = (e) => e.preventDefault(); // Empêche le drag natif
+            img.onmousedown = (e) => e.preventDefault();
             square.appendChild(img);
         }
         
-        // IMPORTANT : On attache le clic directement sans passer par addEventListener
         square.onclick = function(e) {
-            handleSquareClickDirect(squareName, pieces[i] || '');
+            handleSquareClick(squareName, pieces[i] || '');
         };
         
         boardEl.appendChild(square);
@@ -509,44 +498,30 @@ function renderBoard() {
     updateVisualState();
 }
 
-// Nouvelle fonction de clic simplifiée
-async function handleSquareClickDirect(square, piece) {
-    console.log('🎯 CLIC DÉTECTÉ:', square, 'Pièce:', piece);
-    
-    // Si aucune pièce sélectionnée
+async function handleSquareClick(square, piece) {
     if (selectedSquare === null) {
         if (piece && piece === piece.toUpperCase()) {
             selectedSquare = square;
             await fetchLegalMoves(square);
             updateVisualState();
-            console.log('✅ Sélection:', selectedSquare, 'Coups:', legalMoves);
-        } else {
-            console.log('❌ Pas une pièce blanche');
         }
     } else {
-        // Tentative de déplacement
         if (legalMoves.includes(square)) {
-            console.log('✅ Déplacement vers:', square);
-            playSound('move');
             await makeMove(selectedSquare + square);
         } else {
-            // Nouvelle sélection ?
             if (piece && piece === piece.toUpperCase()) {
                 selectedSquare = square;
                 await fetchLegalMoves(square);
                 updateVisualState();
-                console.log('✅ Nouvelle sélection:', selectedSquare);
             } else {
                 selectedSquare = null;
                 legalMoves = [];
                 updateVisualState();
-                console.log('❌ Désélection');
             }
         }
     }
 }
 
-// Met à jour l'état visuel (sélection, coups légaux)
 function updateVisualState() {
     document.querySelectorAll('.square').forEach(sq => {
         sq.classList.remove('selected', 'legal-move', 'has-piece');
@@ -560,8 +535,7 @@ function updateVisualState() {
             const moveEl = document.querySelector(`[data-square="${move}"]`);
             if (moveEl) {
                 moveEl.classList.add('legal-move');
-                // Si la case contient une pièce adverse, affiche un cercle différent
-                if (moveEl.querySelector('.piece-img')) {
+                if (moveEl.dataset.piece) {
                     moveEl.classList.add('has-piece');
                 }
             }
@@ -569,40 +543,6 @@ function updateVisualState() {
     }
 }
 
-// Gère le clic sur une case
-async function handleSquareClick(e) {
-    const square = e.currentTarget.dataset.square;
-    
-    // Si aucune pièce sélectionnée
-    if (selectedSquare === null) {
-        const piece = e.currentTarget.textContent;
-        // Vérifie si c'est une pièce blanche
-        if (piece && ['♙', '♘', '♗', '♖', '♕', '♔'].includes(piece)) {
-            selectedSquare = square;
-            await fetchLegalMoves(square);
-            updateVisualState();
-        }
-    } else {
-        // Tentative de déplacement
-        if (legalMoves.includes(square)) {
-            await makeMove(selectedSquare + square);
-        } else {
-            // Nouvelle sélection ?
-            const piece = e.currentTarget.textContent;
-            if (piece && ['♙', '♘', '♗', '♖', '♕', '♔'].includes(piece)) {
-                selectedSquare = square;
-                await fetchLegalMoves(square);
-                updateVisualState();
-            } else {
-                selectedSquare = null;
-                legalMoves = [];
-                updateVisualState();
-            }
-        }
-    }
-}
-
-// Récupère les coups légaux
 async function fetchLegalMoves(square) {
     try {
         const response = await fetch('/api/get-legal-moves', {
@@ -613,14 +553,14 @@ async function fetchLegalMoves(square) {
         const data = await response.json();
         legalMoves = data.legal_moves || [];
     } catch (error) {
-        console.error('Erreur:', error);
         legalMoves = [];
     }
 }
 
-// Fait un coup
 async function makeMove(move) {
     try {
+        playSound('move');
+        
         const response = await fetch('/api/make-move', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -634,39 +574,29 @@ async function makeMove(move) {
             return;
         }
         
-        board = data.board;
-        selectedSquare = null;
-        legalMoves = [];
-        renderBoard();
+        setTimeout(() => {
+            board = data.board;
+            selectedSquare = null;
+            legalMoves = [];
+            renderBoard();
+            
+            if (data.game_over) {
+                playSound('gameEnd');
+                handleGameOver(data);
+            } else if (data.is_check) {
+                playSound('check');
+                updateStatus(true);
+            } else {
+                playSound('move');
+                updateStatus(false);
+            }
+        }, 800);
         
-        if (data.game_over) {
-            playSound('gameEnd');
-            handleGameOver(data);
-        } else if (data.is_check) {
-            playSound('check');
-            updateStatus(true);
-            // Attendre 800ms puis jouer le son du bot
-            if (data.bot_move) {
-                setTimeout(() => {
-                    playSound(data.bot_move.includes('x') ? 'capture' : 'move');
-                }, 800);
-            }
-        } else {
-            updateStatus(false);
-            // Attendre 800ms puis jouer le son du bot
-            if (data.bot_move) {
-                setTimeout(() => {
-                    playSound(data.bot_move.includes('x') ? 'capture' : 'move');
-                }, 800);
-            }
-        }
     } catch (error) {
-        console.error('Erreur:', error);
         alert('❌ Erreur lors du coup');
     }
 }
 
-// Gère la fin de partie
 function handleGameOver(data) {
     document.getElementById('gameStatus').innerHTML = data.message;
     document.getElementById('playerElo').textContent = data.elo_after;
@@ -680,21 +610,19 @@ function handleGameOver(data) {
     }, 500);
 }
 
-// Met à jour le statut
 function updateStatus(isCheck) {
     const status = document.getElementById('gameStatus');
     if (isCheck) {
         status.innerHTML = '⚠️ ÉCHEC !';
-        status.style.background = '#fee2e2';
-        status.style.color = '#dc2626';
+        status.style.background = '#3d1a1a';
+        status.style.color = '#ff6b6b';
     } else {
         status.innerHTML = '▶️ Au tour des Blancs (Vous)';
-        status.style.background = '#f3f4f6';
-        status.style.color = '#333';
+        status.style.background = '#1a1917';
+        status.style.color = '#b8b6b3';
     }
 }
 
-// Nouvelle partie
 function newGame() {
     if (confirm('Commencer une nouvelle partie ?')) {
         initGame();
@@ -702,12 +630,10 @@ function newGame() {
     }
 }
 
-// Annuler un coup
 function undoMove() {
     alert('⚠️ Fonction en développement');
 }
 
-// Initialisation au chargement
 initGame();
 </script>
 {% endblock %}
