@@ -210,39 +210,24 @@
         <h2>🔒 Salon Privé</h2>
         <div class="room-code">{{ code }}</div>
         
-        {% if room.status == 'waiting' %}
-        <div class="share-info">
-            📤 Partagez ce code avec votre ami pour qu'il rejoigne la partie
+        <div class="share-info" id="roomStatus">
+            📤 Partagez ce code avec votre ami : <strong>{{ code }}</strong>
         </div>
+        
         <button class="copy-btn" onclick="copyCode()">
-            📋 Copier le code
+            📋 Copier le lien complet
         </button>
-        {% else %}
-        <div class="share-info" style="background: rgba(129, 182, 76, 0.2); color: #9ac95a; border-color: #9ac95a;">
-            ✅ Les deux joueurs sont présents - La partie peut commencer !
-        </div>
-        {% endif %}
     </div>
 
     <div class="game-layout">
         <div class="player-info">
-            <div class="player-name">
-                {% if room.player_white %}
-                    {{ room.player_white }}
-                {% else %}
-                    En attente...
-                {% endif %}
-            </div>
+            <div class="player-name" id="whitePlayer">Joueur 1</div>
             <div class="player-color player-white">♔ Blancs</div>
         </div>
 
         <div class="chess-board-wrapper">
             <div class="game-status" id="gameStatus">
-                {% if room.status == 'waiting' %}
-                    ⏳ En attente du joueur noir...
-                {% else %}
-                    ▶️ Au tour des Blancs
-                {% endif %}
+                ⏳ En attente du joueur 2...
             </div>
 
             <div class="chess-board" id="chessBoard"></div>
@@ -253,13 +238,7 @@
         </div>
 
         <div class="player-info">
-            <div class="player-name">
-                {% if room.player_black %}
-                    {{ room.player_black }}
-                {% else %}
-                    <span class="waiting-player">En attente...</span>
-                {% endif %}
-            </div>
+            <div class="player-name" id="blackPlayer">En attente...</div>
             <div class="player-color player-black">♚ Noirs</div>
         </div>
     </div>
@@ -288,25 +267,45 @@ let board = '{{ room.board_state }}';
 let selectedSquare = null;
 let legalMoves = [];
 let myColor = null;
-let currentTurn = '{{ room.current_turn }}';
+let currentTurn = 'white';
 
 window.onload = function() {
-    const playerWhite = '{{ room.player_white }}';
-    const playerBlack = '{{ room.player_black }}';
-    const myUsername = '{{ session.username if session.username else "Invité" }}';
-    
-    if (myUsername === playerWhite) {
-        myColor = 'white';
-    } else if (myUsername === playerBlack) {
-        myColor = 'black';
-    }
-    
     socket.emit('join', { room: roomCode });
     renderBoard();
 };
 
+// Événement : couleur assignée
+socket.on('assign_color', function(data) {
+    myColor = data.color;
+    console.log('🎨 Couleur assignée:', myColor);
+    
+    if (myColor === 'white') {
+        document.getElementById('whitePlayer').innerHTML = 'Vous ♔';
+        document.getElementById('gameStatus').innerHTML = '⏳ En attente du joueur 2...';
+    } else if (myColor === 'black') {
+        document.getElementById('blackPlayer').innerHTML = 'Vous ♚';
+    } else {
+        document.getElementById('gameStatus').innerHTML = '👁️ Mode spectateur';
+    }
+});
+
+// Événement : joueur rejoint
 socket.on('player_joined', function(data) {
-    console.log(data.username + ' a rejoint');
+    console.log('👤 Joueur rejoint, total:', data.count);
+    document.getElementById('roomStatus').innerHTML = '📤 ' + data.message;
+});
+
+// Événement : partie commence
+socket.on('game_start', function(data) {
+    console.log('🎮 Partie commence !');
+    document.getElementById('roomStatus').innerHTML = '✅ ' + data.message;
+    document.getElementById('roomStatus').style.background = 'rgba(129, 182, 76, 0.2)';
+    document.getElementById('roomStatus').style.color = '#9ac95a';
+    document.getElementById('roomStatus').style.borderColor = '#9ac95a';
+    
+    document.getElementById('whitePlayer').innerHTML = myColor === 'white' ? 'Vous ♔' : 'Adversaire';
+    document.getElementById('blackPlayer').innerHTML = myColor === 'black' ? 'Vous ♚' : 'Adversaire';
+    document.getElementById('gameStatus').innerHTML = '▶️ Au tour des Blancs';
 });
 
 socket.on('move_made', function(data) {
@@ -316,8 +315,18 @@ socket.on('move_made', function(data) {
     legalMoves = [];
     renderBoard();
     
+    const turn = currentTurn === 'white' ? 'Blancs' : 'Noirs';
+    document.getElementById('gameStatus').innerHTML = `▶️ Au tour des ${turn}`;
+    
     if (data.game_over) {
         handleGameOver(data.result);
+    }
+});
+
+socket.on('player_left', function(data) {
+    console.log('❌ Joueur parti, restants:', data.count);
+    if (data.count === 0) {
+        document.getElementById('gameStatus').innerHTML = '⚠️ Adversaire déconnecté';
     }
 });
 
@@ -473,8 +482,9 @@ function handleGameOver(result) {
 }
 
 function copyCode() {
-    navigator.clipboard.writeText(roomCode);
-    alert('✅ Code copié : ' + roomCode);
+    const fullUrl = window.location.href;
+    navigator.clipboard.writeText(fullUrl);
+    alert('✅ Lien copié : ' + fullUrl + '\n\nEnvoyez ce lien à votre ami !');
 }
 
 function leaveRoom() {
