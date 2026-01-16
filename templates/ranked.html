@@ -412,6 +412,22 @@ let selectedSquare = null;
 let legalMoves = [];
 let playerElo = {{ user.elo }};
 
+// Sons d'échecs
+const sounds = {
+    move: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3'),
+    capture: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3'),
+    check: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3'),
+    castle: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3'),
+    gameEnd: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3')
+};
+
+function playSound(type) {
+    if (sounds[type]) {
+        sounds[type].currentTime = 0;
+        sounds[type].play().catch(e => console.log('Son désactivé'));
+    }
+}
+
 // Initialise le jeu
 function initGame() {
     // Position de départ
@@ -471,17 +487,19 @@ function renderBoard() {
         square.className = 'square ' + ((rank + file) % 2 === 0 ? 'light' : 'dark');
         square.dataset.index = i;
         square.dataset.square = indexToSquare(i);
+        square.dataset.piece = pieces[i] || ''; // Stocke la pièce dans un attribut
         
         if (pieces[i]) {
             const img = document.createElement('img');
             img.src = PIECE_IMAGES[pieces[i]];
             img.className = 'piece-img';
             img.alt = pieces[i];
+            img.draggable = false;
             square.appendChild(img);
         }
         
-        // Gestion des clics
-        square.addEventListener('click', handleSquareClick);
+        // Gestion des clics - FIX : utilise mousedown au lieu de click
+        square.addEventListener('mousedown', handleSquareClick);
         
         boardEl.appendChild(square);
     }
@@ -583,9 +601,25 @@ async function makeMove(move) {
         renderBoard();
         
         if (data.game_over) {
+            playSound('gameEnd');
             handleGameOver(data);
+        } else if (data.is_check) {
+            playSound('check');
+            updateStatus(true);
+            // Attendre 800ms puis jouer le son du bot
+            if (data.bot_move) {
+                setTimeout(() => {
+                    playSound(data.bot_move.includes('x') ? 'capture' : 'move');
+                }, 800);
+            }
         } else {
-            updateStatus(data.is_check);
+            updateStatus(false);
+            // Attendre 800ms puis jouer le son du bot
+            if (data.bot_move) {
+                setTimeout(() => {
+                    playSound(data.bot_move.includes('x') ? 'capture' : 'move');
+                }, 800);
+            }
         }
     } catch (error) {
         console.error('Erreur:', error);
