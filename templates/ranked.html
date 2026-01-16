@@ -621,9 +621,6 @@ async function fetchLegalMoves(square) {
 // Fait un coup
 async function makeMove(move) {
     try {
-        // Son immédiat pour le joueur
-        playSound('move');
-        
         const response = await fetch('/api/make-move', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -637,25 +634,32 @@ async function makeMove(move) {
             return;
         }
         
-        // Attend 800ms AVANT d'afficher le coup du bot
-        setTimeout(() => {
-            board = data.board;
-            selectedSquare = null;
-            legalMoves = [];
-            renderBoard();
-            
-            if (data.game_over) {
-                playSound('gameEnd');
-                handleGameOver(data);
-            } else if (data.is_check) {
-                playSound('check');
-                updateStatus(true);
-            } else {
-                playSound('move'); // Son du bot
-                updateStatus(false);
-            }
-        }, 800);
+        board = data.board;
+        selectedSquare = null;
+        legalMoves = [];
+        renderBoard();
         
+        if (data.game_over) {
+            playSound('gameEnd');
+            handleGameOver(data);
+        } else if (data.is_check) {
+            playSound('check');
+            updateStatus(true);
+            // Attendre 800ms puis jouer le son du bot
+            if (data.bot_move) {
+                setTimeout(() => {
+                    playSound(data.bot_move.includes('x') ? 'capture' : 'move');
+                }, 800);
+            }
+        } else {
+            updateStatus(false);
+            // Attendre 800ms puis jouer le son du bot
+            if (data.bot_move) {
+                setTimeout(() => {
+                    playSound(data.bot_move.includes('x') ? 'capture' : 'move');
+                }, 800);
+            }
+        }
     } catch (error) {
         console.error('Erreur:', error);
         alert('❌ Erreur lors du coup');
@@ -703,10 +707,6 @@ function undoMove() {
     alert('⚠️ Fonction en développement');
 }
 
-// Initialisation au chargement
-initGame();
-</script>
-{% endblock %}
 // Initialisation au chargement
 initGame();
 </script>
