@@ -211,7 +211,17 @@
         <div class="room-code">{{ code }}</div>
         
         <div class="share-info" id="roomStatus">
-            📤 Partagez ce code avec votre ami : <strong>{{ code }}</strong>
+            📤 Partagez ce lien avec votre ami
+        </div>
+        
+        <div style="background: #1a1917; padding: 1rem; border-radius: 8px; margin-top: 1rem; border: 2px solid #3d3b38;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                <div style="font-size: 2rem;">👥</div>
+                <div>
+                    <div style="color: #7c7a77; font-size: 0.9rem;">Joueurs connectés</div>
+                    <div style="color: #81b64c; font-size: 2rem; font-weight: bold;" id="playerCount">1</div>
+                </div>
+            </div>
         </div>
         
         <button class="copy-btn" onclick="copyCode()">
@@ -281,9 +291,11 @@ socket.on('assign_color', function(data) {
     
     if (myColor === 'white') {
         document.getElementById('whitePlayer').innerHTML = 'Vous ♔';
+        document.getElementById('playerCount').textContent = '1';
         document.getElementById('gameStatus').innerHTML = '⏳ En attente du joueur 2...';
     } else if (myColor === 'black') {
         document.getElementById('blackPlayer').innerHTML = 'Vous ♚';
+        document.getElementById('playerCount').textContent = '2';
     } else {
         document.getElementById('gameStatus').innerHTML = '👁️ Mode spectateur';
     }
@@ -292,13 +304,21 @@ socket.on('assign_color', function(data) {
 // Événement : joueur rejoint
 socket.on('player_joined', function(data) {
     console.log('👤 Joueur rejoint, total:', data.count);
-    document.getElementById('roomStatus').innerHTML = '📤 ' + data.message;
+    document.getElementById('playerCount').textContent = data.count;
+    
+    if (data.count === 1) {
+        document.getElementById('roomStatus').innerHTML = '📤 En attente du joueur 2...';
+        document.getElementById('playerCount').style.color = '#cc3f3f';
+    }
 });
 
 // Événement : partie commence
 socket.on('game_start', function(data) {
     console.log('🎮 Partie commence !');
-    document.getElementById('roomStatus').innerHTML = '✅ ' + data.message;
+    document.getElementById('playerCount').textContent = '2';
+    document.getElementById('playerCount').style.color = '#81b64c';
+    
+    document.getElementById('roomStatus').innerHTML = '✅ Les 2 joueurs sont présents !';
     document.getElementById('roomStatus').style.background = 'rgba(129, 182, 76, 0.2)';
     document.getElementById('roomStatus').style.color = '#9ac95a';
     document.getElementById('roomStatus').style.borderColor = '#9ac95a';
@@ -325,8 +345,16 @@ socket.on('move_made', function(data) {
 
 socket.on('player_left', function(data) {
     console.log('❌ Joueur parti, restants:', data.count);
-    if (data.count === 0) {
+    document.getElementById('playerCount').textContent = data.count;
+    
+    if (data.count === 1) {
         document.getElementById('gameStatus').innerHTML = '⚠️ Adversaire déconnecté';
+        document.getElementById('playerCount').style.color = '#cc3f3f';
+        document.getElementById('roomStatus').innerHTML = '📤 En attente d\'un nouveau joueur...';
+        document.getElementById('roomStatus').style.background = 'rgba(204, 63, 63, 0.1)';
+        document.getElementById('roomStatus').style.color = '#ff6b6b';
+    } else if (data.count === 0) {
+        document.getElementById('gameStatus').innerHTML = '❌ Tous les joueurs ont quitté';
     }
 });
 
