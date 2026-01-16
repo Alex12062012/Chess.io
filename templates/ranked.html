@@ -12,17 +12,19 @@
     }
 
     .sidebar-left, .sidebar-right {
-        background: white;
-        border-radius: 16px;
+        background: #262421;
+        border: 2px solid #3d3b38;
+        border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .chess-board-wrapper {
-        background: white;
-        border-radius: 16px;
+        background: #262421;
+        border: 2px solid #3d3b38;
+        border-radius: 12px;
         padding: 2rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
     .chess-board {
@@ -107,12 +109,12 @@
 
     .elo-number {
         font-size: 3rem;
-        font-weight: bold;
-        color: #667eea;
+        font-weight: 800;
+        color: #81b64c;
     }
 
     .elo-label {
-        color: #666;
+        color: #7c7a77;
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 1px;
@@ -120,21 +122,24 @@
 
     .rank-badge {
         display: inline-block;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, #81b64c 0%, #9ac95a 100%);
+        color: #fff;
         padding: 0.5rem 1rem;
         border-radius: 20px;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 0.5rem;
+        font-size: 0.9rem;
     }
 
     .game-status {
-        background: #f3f4f6;
+        background: #1a1917;
         padding: 1rem;
         border-radius: 10px;
         text-align: center;
         margin-bottom: 1rem;
         font-weight: 600;
+        border: 2px solid #3d3b38;
+        color: #b8b6b3;
     }
 
     .game-controls {
@@ -148,28 +153,31 @@
         padding: 0.8rem;
         border: none;
         border-radius: 8px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
     }
 
     .control-btn.primary {
-        background: #667eea;
+        background: #81b64c;
         color: white;
     }
 
     .control-btn.primary:hover {
-        background: #5568d3;
-        transform: translateY(-2px);
+        background: #9ac95a;
+        transform: translateY(-1px);
     }
 
     .control-btn.secondary {
-        background: #f3f4f6;
-        color: #667eea;
+        background: transparent;
+        color: #7c7a77;
+        border: 2px solid #3d3b38;
     }
 
     .control-btn.secondary:hover {
-        background: #e5e7eb;
+        background: #3d3b38;
+        color: #b8b6b3;
     }
 
     .history-section {
@@ -462,7 +470,7 @@ function renderBoard() {
 // Met à jour l'état visuel (sélection, coups légaux)
 function updateVisualState() {
     document.querySelectorAll('.square').forEach(sq => {
-        sq.classList.remove('selected', 'legal-move');
+        sq.classList.remove('selected', 'legal-move', 'has-piece');
     });
     
     if (selectedSquare !== null) {
@@ -471,7 +479,13 @@ function updateVisualState() {
         
         legalMoves.forEach(move => {
             const moveEl = document.querySelector(`[data-square="${move}"]`);
-            if (moveEl) moveEl.classList.add('legal-move');
+            if (moveEl) {
+                moveEl.classList.add('legal-move');
+                // Si la case contient une pièce adverse, affiche un cercle différent
+                if (moveEl.textContent.trim() !== '') {
+                    moveEl.classList.add('has-piece');
+                }
+            }
         });
     }
 }
