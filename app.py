@@ -13,20 +13,17 @@ app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Configuration
 DATABASE = 'chess.db'
-STOCKFISH_PATH = '/usr/games/stockfish'  # Sur Render, utiliser ce path
+STOCKFISH_PATH = '/usr/games/stockfish'
 
 # ========================================
 # BASE DE DONNÉES
 # ========================================
 
 def init_db():
-    """Initialise la base de données"""
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
     
-    # Table des utilisateurs
     c.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -38,7 +35,6 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
-    # Table des parties
     c.execute('''CREATE TABLE IF NOT EXISTS games (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -52,7 +48,6 @@ def init_db():
         FOREIGN KEY (user_id) REFERENCES users(id)
     )''')
     
-    # Table des salons privés
     c.execute('''CREATE TABLE IF NOT EXISTS rooms (
         code TEXT PRIMARY KEY,
         board_state TEXT,
@@ -67,13 +62,11 @@ def init_db():
     conn.close()
 
 def get_db():
-    """Connexion à la base de données"""
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 def hash_password(password):
-    """Hash un mot de passe"""
     return hashlib.sha256(password.encode()).hexdigest()
 
 # ========================================
@@ -81,37 +74,34 @@ def hash_password(password):
 # ========================================
 
 def calculate_elo_change(player_elo, opponent_elo, win):
-    """Calcule le changement d'ELO"""
     K = 32
     expected = 1 / (1 + 10 ** ((opponent_elo - player_elo) / 400))
     actual = 1.0 if win else 0.0
     return round(K * (actual - expected))
 
 def get_bot_depth(elo):
-    """Retourne la profondeur Stockfish selon l'ELO (réajusté - bots plus forts)"""
     if elo < 600:
-        return 2   # Très débutant
+        return 2
     elif elo < 800:
-        return 4   # Débutant
+        return 4
     elif elo < 1000:
-        return 6   # Novice
+        return 6
     elif elo < 1200:
-        return 8   # Amateur (1000 ELO = profondeur 8)
+        return 8
     elif elo < 1400:
-        return 11  # Intermédiaire
+        return 11
     elif elo < 1600:
-        return 14  # Avancé
+        return 14
     elif elo < 1800:
-        return 17  # Expert
+        return 17
     elif elo < 2000:
-        return 20  # Maître
+        return 20
     elif elo < 2200:
-        return 23  # Grand Maître
+        return 23
     else:
-        return 25  # Super GM
+        return 25
 
 def get_rank_name(elo):
-    """Retourne le rang selon l'ELO"""
     if elo < 800:
         return "♟️ Débutant"
     elif elo < 1000:
@@ -134,11 +124,8 @@ def get_rank_name(elo):
 # ========================================
 
 def get_bot_move(board_fen, elo):
-    """Obtient le coup du bot selon l'ELO"""
     try:
         board = chess.Board(board_fen)
-        if board.is_game_over():
-            return None
         engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
         depth = get_bot_depth(elo)
         result = engine.play(board, chess.engine.Limit(depth=depth))
@@ -146,11 +133,8 @@ def get_bot_move(board_fen, elo):
         return result.move.uci() if result.move else None
     except Exception as e:
         print(f"Erreur Stockfish: {e}")
-        # Fallback : coup aléatoire
         import random
         board = chess.Board(board_fen)
-        if board.is_game_over():
-            return None
         legal_moves = list(board.legal_moves)
         return random.choice(legal_moves).uci() if legal_moves else None
 
@@ -160,7 +144,6 @@ def get_bot_move(board_fen, elo):
 
 @app.route('/')
 def home():
-    """Page d'accueil"""
     return render_template('home.html', 
                          logged_in='user_id' in session,
                          username=session.get('username'),
@@ -168,7 +151,6 @@ def home():
                          error_modal=None)
 
 def get_home_stats():
-    """Récupère les stats pour la page d'accueil"""
     db = get_db()
     stats = {
         'total_games': db.execute('SELECT COUNT(*) as count FROM games').fetchone()['count'],
@@ -180,7 +162,6 @@ def get_home_stats():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Page de connexion"""
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -201,14 +182,9 @@ def login():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    """Page d'inscription"""
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        password_confirm = request.form.get('password_confirm')
-        
-        if password != password_confirm:
-            return render_template('signup.html', error="Les mots de passe ne correspondent pas")
         
         if len(username) < 3:
             return render_template('signup.html', error="Le nom doit faire au moins 3 caractères")
@@ -236,13 +212,11 @@ def signup():
 
 @app.route('/logout')
 def logout():
-    """Déconnexion"""
     session.clear()
     return redirect(url_for('home'))
 
 @app.route('/ranked')
 def ranked():
-    """Page du mode classé"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
@@ -261,14 +235,12 @@ def ranked():
 
 @app.route('/create-room')
 def create_room():
-    """Créer un salon privé"""
     code = secrets.token_hex(3).upper()
-    current_user = session.get('username', 'Invité')
     
     try:
         db = get_db()
         db.execute('INSERT INTO rooms (code, board_state, player_white) VALUES (?, ?, ?)',
-                  (code, chess.Board().fen(), current_user))
+                  (code, chess.Board().fen(), session.get('username', 'Invité')))
         db.commit()
         db.close()
     except Exception as e:
@@ -279,7 +251,6 @@ def create_room():
 
 @app.route('/join-room', methods=['POST'])
 def join_room_route():
-    """Rejoindre un salon privé"""
     code = request.form.get('code', '').upper().strip()
     
     if not code or len(code) != 6:
@@ -300,11 +271,10 @@ def join_room_route():
                              logged_in='user_id' in session,
                              username=session.get('username'),
                              stats=get_home_stats(),
-                             error_modal=f"Salon '{code}' introuvable. Vérifiez le code.")
+                             error_modal=f"Salon '{code}' introuvable.")
 
 @app.route('/room/<code>')
 def room(code):
-    """Page du salon privé"""
     db = get_db()
     room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
     
@@ -314,11 +284,9 @@ def room(code):
     
     current_user = session.get('username', 'Invité')
     
-    # Si le joueur blanc n'est pas défini (ne devrait jamais arriver)
     if not room_data['player_white']:
         db.execute('UPDATE rooms SET player_white = ? WHERE code = ?', (current_user, code))
         db.commit()
-    # Si c'est un nouveau joueur et qu'il n'y a pas encore de joueur noir
     elif not room_data['player_black'] and current_user != room_data['player_white']:
         db.execute('UPDATE rooms SET player_black = ?, status = ? WHERE code = ?',
                   (current_user, 'playing', code))
@@ -327,7 +295,7 @@ def room(code):
     
     db.close()
     
-    return render_template('room.html', room=room_data, code=code, current_user=current_user)
+    return render_template('room.html', room=room_data, code=code)
 
 # ========================================
 # API ENDPOINTS
@@ -335,7 +303,6 @@ def room(code):
 
 @app.route('/api/make-move', methods=['POST'])
 def make_move():
-    """Fait un coup en mode classé contre le bot"""
     if 'user_id' not in session:
         return jsonify({'error': 'Non connecté'}), 401
     
@@ -343,7 +310,6 @@ def make_move():
     board_fen = data.get('board')
     move_uci = data.get('move')
     
-    # Valide et joue le coup du joueur
     board = chess.Board(board_fen)
     try:
         move = chess.Move.from_uci(move_uci)
@@ -353,22 +319,15 @@ def make_move():
     except:
         return jsonify({'error': 'Coup invalide'}), 400
     
-    # Vérifie fin de partie après coup joueur
     if board.is_game_over():
         return handle_game_over(board, session['user_id'])
     
-    # Attendre 800ms avant que le bot joue (simule la réflexion)
-    import time
-    time.sleep(0.8)
-    
-    # Coup du bot
     bot_elo = session.get('elo', 1000)
     bot_move = get_bot_move(board.fen(), bot_elo)
     
     if bot_move:
         board.push(chess.Move.from_uci(bot_move))
     
-    # Vérifie fin de partie après coup bot
     if board.is_game_over():
         return handle_game_over(board, session['user_id'])
     
@@ -380,26 +339,23 @@ def make_move():
     })
 
 def handle_game_over(board, user_id):
-    """Gère la fin de partie et met à jour l'ELO"""
     result = board.result()
     
     db = get_db()
     user = db.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-    bot_elo = user['elo']  # CORRIGÉ ICI
+    bot_elo = user['elo']
     elo_before = user['elo']
     
-    # Détermine le résultat
     if result == "1-0":
         player_won = True
-        message = "🎉 Victoire ! Vous avez gagné !"
+        message = "🎉 Victoire !"
     elif result == "0-1":
         player_won = False
-        message = "😞 Défaite. Le bot a gagné."
+        message = "😞 Défaite"
     else:
         player_won = None
-        message = "🤝 Match nul !"
+        message = "🤝 Match nul"
     
-    # Calcule l'ELO
     if player_won is not None:
         elo_change = calculate_elo_change(elo_before, bot_elo, player_won)
         elo_after = elo_before + elo_change
@@ -407,7 +363,6 @@ def handle_game_over(board, user_id):
         elo_change = 0
         elo_after = elo_before
     
-    # Met à jour la base de données
     games_won = user['games_won'] + (1 if player_won else 0)
     peak_elo = max(user['peak_elo'], elo_after)
     
@@ -416,22 +371,19 @@ def handle_game_over(board, user_id):
                   WHERE id = ?''',
               (elo_after, peak_elo, games_won, user_id))
     
-    # Sauvegarde la partie
-    moves_str = " ".join([move.uci() for move in board.move_stack])  # CORRIGÉ ICI
     db.execute('''INSERT INTO games (user_id, bot_elo, result, elo_before, elo_after, elo_change, moves)
                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
-              (user_id, bot_elo, result, elo_before, elo_after, elo_change, moves_str))
+              (user_id, bot_elo, result, elo_before, elo_after, elo_change, str(board.move_stack)))
     
     db.commit()
     db.close()
     
-    # Met à jour la session
     session['elo'] = elo_after
     
     return jsonify({
         'game_over': True,
         'result': result,
-        'message': message,
+        'message': message + f" ({elo_change:+d} ELO)",
         'elo_change': elo_change,
         'elo_after': elo_after,
         'board': board.fen()
@@ -439,7 +391,6 @@ def handle_game_over(board, user_id):
 
 @app.route('/api/get-legal-moves', methods=['POST'])
 def get_legal_moves():
-    """Retourne les coups légaux pour une case"""
     data = request.json
     board_fen = data.get('board')
     square = data.get('square')
@@ -458,18 +409,7 @@ def get_legal_moves():
 
 @app.route('/api/stats')
 def get_stats():
-    """Retourne les statistiques globales en temps réel"""
-    db = get_db()
-    
-    stats = {
-        'total_games': db.execute('SELECT COUNT(*) as count FROM games').fetchone()['count'],
-        'total_players': db.execute('SELECT COUNT(*) as count FROM users').fetchone()['count'],
-        'active_rooms': db.execute("SELECT COUNT(*) as count FROM rooms WHERE status = 'playing'").fetchone()['count']
-    }
-    
-    db.close()
-    
-    return jsonify(stats)
+    return jsonify(get_home_stats())
 
 # ========================================
 # WEBSOCKETS (Salons privés)
@@ -477,33 +417,28 @@ def get_stats():
 
 @socketio.on('join')
 def on_join(data):
-    """Un joueur rejoint un salon"""
     room_code = data['room']
     join_room(room_code)
     emit('player_joined', {'username': session.get('username', 'Invité')}, room=room_code)
 
 @socketio.on('move')
 def on_move(data):
-    """Un joueur fait un coup dans un salon"""
     room_code = data['room']
     move = data['move']
     board_fen = data['board']
     
-    # Valide le coup
     board = chess.Board(board_fen)
     try:
         chess_move = chess.Move.from_uci(move)
         if chess_move in board.legal_moves:
             board.push(chess_move)
             
-            # Met à jour la BDD
             db = get_db()
             db.execute('UPDATE rooms SET board_state = ?, current_turn = ? WHERE code = ?',
                       (board.fen(), 'black' if board.turn else 'white', room_code))
             db.commit()
             db.close()
             
-            # Envoie à tous les joueurs du salon
             emit('move_made', {
                 'move': move,
                 'board': board.fen(),
@@ -516,7 +451,6 @@ def on_move(data):
 
 @socketio.on('leave')
 def on_leave(data):
-    """Un joueur quitte un salon"""
     room_code = data['room']
     leave_room(room_code)
     emit('player_left', {'username': session.get('username', 'Invité')}, room=room_code)
@@ -525,9 +459,7 @@ def on_leave(data):
 # INITIALISATION
 # ========================================
 
-# Initialise la BDD au démarrage
 init_db()
 
 if __name__ == '__main__':
-    # Lance l'application
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
