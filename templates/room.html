@@ -10,33 +10,34 @@
     }
 
     .room-header {
-        background: white;
-        border-radius: 16px;
+        background: #262421;
+        border-radius: 12px;
         padding: 2rem;
         margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         text-align: center;
+        border: 1px solid #3d3b38;
     }
 
     .room-code {
         font-size: 3rem;
         font-weight: bold;
-        color: #667eea;
+        color: #81b64c;
         letter-spacing: 0.5rem;
         margin: 1rem 0;
         font-family: monospace;
     }
 
     .share-info {
-        background: #dbeafe;
+        background: rgba(129, 182, 76, 0.1);
         padding: 1rem;
         border-radius: 8px;
         margin-top: 1rem;
-        color: #1e40af;
+        color: #9ac95a;
     }
 
     .copy-btn {
-        background: #667eea;
+        background: #81b64c;
         color: white;
         border: none;
         padding: 0.6rem 1.5rem;
@@ -48,7 +49,7 @@
     }
 
     .copy-btn:hover {
-        background: #5568d3;
+        background: #9ac95a;
         transform: translateY(-2px);
     }
 
@@ -60,17 +61,19 @@
     }
 
     .player-info {
-        background: white;
-        border-radius: 16px;
+        background: #262421;
+        border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         text-align: center;
+        border: 1px solid #3d3b38;
     }
 
     .player-name {
         font-size: 1.5rem;
         font-weight: bold;
         margin-bottom: 0.5rem;
+        color: #fff;
     }
 
     .player-color {
@@ -82,36 +85,37 @@
     }
 
     .player-white {
-        background: #f3f4f6;
+        background: #eeeed2;
         color: #333;
     }
 
     .player-black {
-        background: #1f2937;
+        background: #769656;
         color: white;
     }
 
     .waiting-player {
-        color: #999;
+        color: #7c7a77;
         font-style: italic;
         padding: 2rem;
     }
 
     .chess-board-wrapper {
-        background: white;
-        border-radius: 16px;
+        background: #262421;
+        border-radius: 12px;
         padding: 2rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        border: 1px solid #3d3b38;
     }
 
     .chess-board {
         display: grid;
         grid-template-columns: repeat(8, 60px);
         grid-template-rows: repeat(8, 60px);
-        border: 3px solid #333;
+        border: 4px solid #3d3b38;
         margin: 0 auto;
         width: fit-content;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
     .square {
@@ -137,29 +141,38 @@
     .square.dark { background-color: #769656; }
 
     .square.selected {
-        background-color: #7fc97f !important;
+        background-color: #baca44 !important;
         box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
     }
 
     .square.legal-move {
-        background-color: #90ee90 !important;
+        position: relative;
     }
 
     .square.legal-move::after {
-        content: '●';
+        content: '';
         position: absolute;
-        color: rgba(0,0,0,0.3);
-        font-size: 20px;
+        width: 22px;
+        height: 22px;
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 50%;
+    }
+
+    .square.legal-move.has-piece::after {
+        width: 64px;
+        height: 64px;
+        background: transparent;
+        border: 4px solid rgba(0, 0, 0, 0.15);
+        border-radius: 50%;
     }
 
     .square.check {
-        background-color: #ff6b6b !important;
+        background: radial-gradient(ellipse at center, #f44336 0%, #d32f2f 100%) !important;
         animation: pulse 1s infinite;
     }
 
     .square:hover {
-        opacity: 0.9;
-        transform: scale(1.05);
+        filter: brightness(0.95);
     }
 
     @keyframes pulse {
@@ -168,22 +181,25 @@
     }
 
     .game-status {
-        background: #f3f4f6;
+        background: #1a1917;
         padding: 1rem;
         border-radius: 10px;
         text-align: center;
         margin-bottom: 1rem;
         font-weight: 600;
+        border: 2px solid #3d3b38;
+        color: #b8b6b3;
     }
 
     .chat-section {
-        background: white;
-        border-radius: 16px;
+        background: #262421;
+        border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         height: 400px;
         display: flex;
         flex-direction: column;
+        border: 1px solid #3d3b38;
     }
 
     .chat-messages {
@@ -191,7 +207,7 @@
         overflow-y: auto;
         margin-bottom: 1rem;
         padding: 1rem;
-        background: #f9fafb;
+        background: #1a1917;
         border-radius: 8px;
     }
 
@@ -203,8 +219,8 @@
     }
 
     .chat-message.system {
-        background: #dbeafe;
-        color: #1e40af;
+        background: rgba(129, 182, 76, 0.1);
+        color: #9ac95a;
         text-align: center;
         font-style: italic;
     }
@@ -217,19 +233,25 @@
     .chat-input input {
         flex: 1;
         padding: 0.8rem;
-        border: 2px solid #e5e7eb;
+        border: 2px solid #3d3b38;
         border-radius: 8px;
         font-size: 1rem;
+        background: #1a1917;
+        color: #fff;
     }
 
     .chat-input button {
         padding: 0.8rem 1.5rem;
-        background: #667eea;
+        background: #81b64c;
         color: white;
         border: none;
         border-radius: 8px;
         cursor: pointer;
         font-weight: 600;
+    }
+
+    .chat-input button:hover {
+        background: #9ac95a;
     }
 
     .game-controls {
@@ -249,12 +271,12 @@
     }
 
     .control-btn.danger {
-        background: #ef4444;
+        background: #cc3f3f;
         color: white;
     }
 
     .control-btn.danger:hover {
-        background: #dc2626;
+        background: #b33636;
     }
 
     @media (max-width: 1200px) {
@@ -280,7 +302,7 @@
             📋 Copier le code
         </button>
         {% else %}
-        <div class="share-info" style="background: #d1fae5; color: #059669;">
+        <div class="share-info" style="background: rgba(129, 182, 76, 0.1); color: #9ac95a;">
             ✅ Les deux joueurs sont présents - La partie peut commencer !
         </div>
         {% endif %}
@@ -382,7 +404,7 @@ window.onload = function() {
     // Détermine la couleur du joueur
     const playerWhite = '{{ room.player_white }}';
     const playerBlack = '{{ room.player_black }}';
-    const myUsername = '{{ session.username if session.username else "Invité" }}';
+    const myUsername = '{{ current_user }}';  // CORRIGÉ ICI
     
     if (myUsername === playerWhite) {
         myColor = 'white';
@@ -596,13 +618,13 @@ function updateStatus(isCheck) {
     const status = document.getElementById('gameStatus');
     if (isCheck) {
         status.innerHTML = '⚠️ ÉCHEC !';
-        status.style.background = '#fee2e2';
-        status.style.color = '#dc2626';
+        status.style.background = 'rgba(244, 67, 54, 0.2)';
+        status.style.color = '#f44336';
     } else {
         const turn = currentTurn === 'white' ? 'Blancs' : 'Noirs';
         status.innerHTML = `▶️ Au tour des ${turn}`;
-        status.style.background = '#f3f4f6';
-        status.style.color = '#333';
+        status.style.background = '#1a1917';
+        status.style.color = '#b8b6b3';
     }
 }
 
@@ -650,9 +672,6 @@ function leaveRoom() {
 // Nettoyage à la fermeture
 window.onbeforeunload = function() {
     socket.emit('leave', { room: roomCode });
-};
-</script>
-{% endblock %});
 };
 </script>
 {% endblock %}
