@@ -485,26 +485,65 @@ function renderBoard() {
         const file = i % 8;
         
         square.className = 'square ' + ((rank + file) % 2 === 0 ? 'light' : 'dark');
-        square.dataset.index = i;
-        square.dataset.square = indexToSquare(i);
-        square.dataset.piece = pieces[i] || ''; // Stocke la pièce dans un attribut
+        const squareName = indexToSquare(i);
+        square.dataset.square = squareName;
+        square.dataset.piece = pieces[i] || '';
         
         if (pieces[i]) {
             const img = document.createElement('img');
             img.src = PIECE_IMAGES[pieces[i]];
             img.className = 'piece-img';
-            img.alt = pieces[i];
             img.draggable = false;
+            img.onmousedown = (e) => e.preventDefault(); // Empêche le drag natif
             square.appendChild(img);
         }
         
-        // Gestion des clics - FIX : utilise mousedown au lieu de click
-        square.addEventListener('mousedown', handleSquareClick);
+        // IMPORTANT : On attache le clic directement sans passer par addEventListener
+        square.onclick = function(e) {
+            handleSquareClickDirect(squareName, pieces[i] || '');
+        };
         
         boardEl.appendChild(square);
     }
     
     updateVisualState();
+}
+
+// Nouvelle fonction de clic simplifiée
+async function handleSquareClickDirect(square, piece) {
+    console.log('🎯 CLIC DÉTECTÉ:', square, 'Pièce:', piece);
+    
+    // Si aucune pièce sélectionnée
+    if (selectedSquare === null) {
+        if (piece && piece === piece.toUpperCase()) {
+            selectedSquare = square;
+            await fetchLegalMoves(square);
+            updateVisualState();
+            console.log('✅ Sélection:', selectedSquare, 'Coups:', legalMoves);
+        } else {
+            console.log('❌ Pas une pièce blanche');
+        }
+    } else {
+        // Tentative de déplacement
+        if (legalMoves.includes(square)) {
+            console.log('✅ Déplacement vers:', square);
+            playSound('move');
+            await makeMove(selectedSquare + square);
+        } else {
+            // Nouvelle sélection ?
+            if (piece && piece === piece.toUpperCase()) {
+                selectedSquare = square;
+                await fetchLegalMoves(square);
+                updateVisualState();
+                console.log('✅ Nouvelle sélection:', selectedSquare);
+            } else {
+                selectedSquare = null;
+                legalMoves = [];
+                updateVisualState();
+                console.log('❌ Désélection');
+            }
+        }
+    }
 }
 
 // Met à jour l'état visuel (sélection, coups légaux)
