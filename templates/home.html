@@ -212,20 +212,20 @@
 </div>
 
 <div class="options-grid">
-    <!-- Option 1: Rejoindre un salon -->
+    <!-- Option 1: Créer un salon (génère un code aléatoire) -->
+    <div class="option-card" onclick="createRoom()">
+        <div class="option-icon">🔒</div>
+        <div class="option-title">Créer un salon privé</div>
+        <div class="option-description">Générez un code unique et partagez-le avec un ami</div>
+        <button class="option-button secondary">Créer un salon →</button>
+    </div>
+
+    <!-- Option 2: Rejoindre un salon existant -->
     <div class="option-card" onclick="openJoinModal()">
         <div class="option-icon">🎲</div>
         <div class="option-title">Rejoindre un salon</div>
-        <div class="option-description">Entrez un code à 6 caractères pour rejoindre une partie privée</div>
+        <div class="option-description">Entrez le code que votre ami vous a donné</div>
         <button class="option-button secondary">Rejoindre →</button>
-    </div>
-
-    <!-- Option 2: Créer un salon -->
-    <div class="option-card" onclick="window.location.href='/create-room'">
-        <div class="option-icon">🔒</div>
-        <div class="option-title">Créer un salon privé</div>
-        <div class="option-description">Générez un code et jouez avec un ami en temps réel</div>
-        <button class="option-button secondary">Créer un salon →</button>
     </div>
 
     <!-- Option 3: Mode classé -->
@@ -308,6 +308,12 @@ setInterval(async function() {
 
     function closeJoinModal() {
         document.getElementById('joinModal').classList.remove('active');
+    }
+
+    function createRoom() {
+        // Génère un code aléatoire de 6 caractères
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        window.location.href = '/room/' + code;
     }
 
     function handleRankedClick() {
