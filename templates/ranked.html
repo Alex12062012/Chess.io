@@ -43,11 +43,17 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 50px;
         cursor: pointer;
         transition: all 0.15s;
         user-select: none;
         position: relative;
+    }
+
+    .piece-img {
+        width: 60px;
+        height: 60px;
+        pointer-events: none;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
     }
 
     .square.light { 
@@ -382,10 +388,20 @@
 </div>
 
 <script>
-// Symboles Unicode des pièces
-const PIECES = {
-    'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕', 'K': '♔',
-    'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚'
+// Mapping des pièces vers les images SVG (style Chess.com)
+const PIECE_IMAGES = {
+    'P': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png',
+    'N': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png',
+    'B': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wb.png',
+    'R': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wr.png',
+    'Q': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png',
+    'K': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png',
+    'p': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bp.png',
+    'n': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bn.png',
+    'b': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bb.png',
+    'r': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/br.png',
+    'q': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bq.png',
+    'k': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bk.png'
 };
 
 // État du jeu
@@ -455,7 +471,11 @@ function renderBoard() {
         square.dataset.square = indexToSquare(i);
         
         if (pieces[i]) {
-            square.textContent = PIECES[pieces[i]] || '';
+            const img = document.createElement('img');
+            img.src = PIECE_IMAGES[pieces[i]];
+            img.className = 'piece-img';
+            img.alt = pieces[i];
+            square.appendChild(img);
         }
         
         // Gestion des clics
@@ -482,7 +502,7 @@ function updateVisualState() {
             if (moveEl) {
                 moveEl.classList.add('legal-move');
                 // Si la case contient une pièce adverse, affiche un cercle différent
-                if (moveEl.textContent.trim() !== '') {
+                if (moveEl.querySelector('.piece-img')) {
                     moveEl.classList.add('has-piece');
                 }
             }
