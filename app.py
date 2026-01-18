@@ -553,4 +553,4 @@ def on_leave(data):
 init_db()
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)bug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
