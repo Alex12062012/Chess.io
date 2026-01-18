@@ -51,10 +51,10 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS rooms (
         code TEXT PRIMARY KEY,
         board_state TEXT,
-        current_turn TEXT DEFAULT 'white',  -- 'white' ou 'black'
-        player_white_sid TEXT,              -- session ID du joueur blanc
-        player_black_sid TEXT,              -- session ID du joueur noir
-        status TEXT DEFAULT 'waiting',      -- 'waiting' ou 'playing'
+        current_turn TEXT DEFAULT 'white',
+        player_white TEXT,
+        player_black TEXT,
+        status TEXT DEFAULT 'waiting',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
@@ -244,8 +244,6 @@ def join_room_route():
                              stats=get_home_stats(),
                              error_modal="Code invalide. Le code doit faire 6 caractères.")
     
-    # Redirige directement vers le salon
-    # Pas besoin de vérifier s'il existe, il sera créé automatiquement
     return redirect(url_for('room', code=code))
 
 @app.route('/room/<code>')
@@ -264,7 +262,6 @@ def room(code):
     
     db.close()
     
-    # Pas de gestion de joueurs côté serveur, tout se fait en WebSocket
     return render_template('room.html', room=room_data, code=code)
 
 # ========================================
@@ -382,82 +379,50 @@ def get_stats():
     return jsonify(get_home_stats())
 
 # ========================================
-# WEBSOCKETS (Salons privés) - CORRIGÉ
+# WEBSOCKETS (Salons privés) - VERSION CORRIGEE
 # ========================================
 
-# Dictionnaire pour tracker les salons et leurs joueurs
-room_sessions = {}
+# Structure pour stocker les joueurs par salon
+room_players = {}  # Ex: { 'AB12CD': [sid1, sid2], ... }
 
 @socketio.on('join')
 def on_join(data):
     room_code = data['room']
     join_room(room_code)
 
-    db = get_db()
-    room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (room_code,)).fetchone()
+    # Initialiser le salon si nécessaire
+    if room_code not in room_players:
+        room_players[room_code] = []
 
-    if not room_data:
-        # Le salon n'existe pas, on le crée
-        db.execute('INSERT INTO rooms (code, board_state) VALUES (?, ?)',
-                   (room_code, chess.Board().fen()))
-        db.commit()
-        room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (room_code,)).fetchone()
+    # Ajouter le joueur à la liste
+    if request.sid not in room_players[room_code]:
+        room_players[room_code].append(request.sid)
 
-    # Vérifier si le joueur est déjà assigné à une couleur
-    player_color = None
-    if not room_data['player_white_sid']:
-        # Premier joueur -> Blanc
-        db.execute('UPDATE rooms SET player_white_sid = ?, status = ? WHERE code = ?',
-                   (request.sid, 'waiting', room_code))
-        db.commit()
-        player_color = 'white'
-        print(f"Assigné BLANC à {request.sid} dans {room_code}")
-    elif not room_data['player_black_sid']:
-        # Deuxième joueur -> Noir
-        db.execute('UPDATE rooms SET player_black_sid = ?, status = ? WHERE code = ?',
-                   (request.sid, 'playing', room_code))
-        db.commit()
-        player_color = 'black'
-        print(f"Assigné NOIR à {request.sid} dans {room_code}")
-        # Démarrer la partie
+    player_count = len(room_players[room_code])
+    print(f"Joueur {request.sid} rejoint {room_code}. Total: {player_count}/2")
+
+    # Assigner la couleur selon l'ordre d'arrivée
+    if player_count == 1:
+        color = 'white'
+        emit('assign_color', {'color': color, 'message': 'Vous jouez les Blancs'})
+        emit('player_joined', {'count': player_count, 'message': 'En attente du joueur 2...'}, room=room_code)
+    elif player_count == 2:
+        color = 'black'
+        emit('assign_color', {'color': color, 'message': 'Vous jouez les Noirs'})
         emit('game_start', {'message': 'Les 2 joueurs sont là ! La partie commence !'}, room=room_code)
+        # Mettre à jour le statut du salon dans la base
+        db = get_db()
+        db.execute("UPDATE rooms SET status = 'playing' WHERE code = ?", (room_code,))
+        db.commit()
+        db.close()
     else:
-        # Troisième joueur -> Spectateur (ou refusé)
-        player_color = 'spectator'
-        print(f"{request.sid} est spectateur dans {room_code}")
-
-    db.close()
-
-    # Sauvegarder la session dans la mémoire locale
-    if room_code not in room_sessions:
-        room_sessions[room_code] = {}
-    room_sessions[room_code][request.sid] = player_color
-
-    # Envoyer la couleur au joueur
-    emit('assign_color', {'color': player_color, 'message': f'Vous jouez les {player_color.capitalize()}s' if player_color in ['white', 'black'] else 'Vous êtes spectateur'})
-
-    # Mettre à jour le nombre de joueurs
-    active_players = sum(1 for sid, color in room_sessions[room_code].items() if color in ['white', 'black'])
-    emit('player_joined', {'count': active_players, 'message': f'{active_players}/2 joueurs connectés'}, room=room_code)
-
+        emit('assign_color', {'color': 'spectator', 'message': 'Spectateur'})
 
 @socketio.on('move')
 def on_move(data):
     room_code = data['room']
     move = data['move']
     board_fen = data['board']
-
-    # Vérifier si le joueur est autorisé à jouer (sa couleur)
-    player_color = room_sessions.get(room_code, {}).get(request.sid)
-    if not player_color:
-        emit('error', {'message': 'Vous n\'êtes pas dans ce salon.'})
-        return
-
-    # Vérifier que c'est le tour du joueur
-    expected_color = 'white' if board_fen.split()[1] == 'w' else 'black'
-    if player_color != expected_color:
-        emit('error', {'message': 'Ce n\'est pas votre tour.'})
-        return
 
     board = chess.Board(board_fen)
     try:
@@ -467,8 +432,7 @@ def on_move(data):
 
             # Mettre à jour l'état dans la base
             db = get_db()
-            db.execute('UPDATE rooms SET board_state = ? WHERE code = ?',
-                      (board.fen(), room_code))
+            db.execute('UPDATE rooms SET board_state = ? WHERE code = ?', (board.fen(), room_code))
             db.commit()
             db.close()
 
@@ -482,69 +446,42 @@ def on_move(data):
             }, room=room_code)
         else:
             emit('error', {'message': 'Coup illégal'})
-    except:
+    except Exception as e:
+        print(f"Erreur coup: {e}")
         emit('error', {'message': 'Coup invalide'})
-
 
 @socketio.on('disconnect')
 def on_disconnect():
-    print(f"DISCONNECT: {request.sid}")
-    # Parcourir tous les salons pour trouver la session
-    for room_code, players in list(room_sessions.items()):
+    print(f"Déconnexion de {request.sid}")
+    for room_code, players in room_players.items():
         if request.sid in players:
-            player_color = players[request.sid]
-            del players[request.sid]
+            players.remove(request.sid)
+            player_count = len(players)
+            emit('player_left', {'count': player_count}, room=room_code)
 
-            # Mettre à jour la base de données
-            db = get_db()
-            if player_color == 'white':
-                db.execute('UPDATE rooms SET player_white_sid = NULL, status = ? WHERE code = ?',
-                          ('waiting', room_code))
-            elif player_color == 'black':
-                db.execute('UPDATE rooms SET player_black_sid = NULL, status = ? WHERE code = ?',
-                          ('waiting', room_code))
-            db.commit()
-            db.close()
-
-            # Diffuser le départ
-            active_players = sum(1 for sid, color in players.items() if color in ['white', 'black'])
-            emit('player_left', {'count': active_players}, room=room_code)
-
-            # Nettoyer le salon s'il est vide
-            if active_players == 0:
-                if room_code in room_sessions:
-                    del room_sessions[room_code]
-
+            # Si plus personne, supprimer le salon de la mémoire
+            if player_count == 0:
+                del room_players[room_code]
+            # Si un seul joueur reste, mettre à jour le statut
+            else:
+                db = get_db()
+                db.execute("UPDATE rooms SET status = 'waiting' WHERE code = ?", (room_code,))
+                db.commit()
+                db.close()
             break
-
 
 @socketio.on('leave')
 def on_leave(data):
     room_code = data['room']
     leave_room(room_code)
 
-    if room_code in room_sessions and request.sid in room_sessions[room_code]:
-        player_color = room_sessions[room_code][request.sid]
-        del room_sessions[room_code][request.sid]
+    if room_code in room_players and request.sid in room_players[room_code]:
+        room_players[room_code].remove(request.sid)
+        player_count = len(room_players[room_code])
+        emit('player_left', {'count': player_count}, room=room_code)
 
-        # Mettre à jour la base
-        db = get_db()
-        if player_color == 'white':
-            db.execute('UPDATE rooms SET player_white_sid = NULL, status = ? WHERE code = ?',
-                      ('waiting', room_code))
-        elif player_color == 'black':
-            db.execute('UPDATE rooms SET player_black_sid = NULL, status = ? WHERE code = ?',
-                      ('waiting', room_code))
-        db.commit()
-        db.close()
-
-        active_players = sum(1 for sid, color in room_sessions[room_code].items() if color in ['white', 'black'])
-        emit('player_left', {'count': active_players}, room=room_code)
-
-        if active_players == 0:
-            if room_code in room_sessions:
-                del room_sessions[room_code]
-
+        if player_count == 0:
+            del room_players[room_code]
 
 # ========================================
 # INITIALISATION
