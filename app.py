@@ -248,14 +248,14 @@ def join_room_route():
 
 @app.route('/room/<code>')
 def room(code):
-    """Page du salon - Simple : 2 personnes sur même URL = partie ensemble"""
+    """Page du salon avec système de bouton Prêt"""
     db = get_db()
     room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
     
     # Si le salon n'existe pas, créer un nouveau
     if not room_data:
-        db.execute('INSERT INTO rooms (code, board_state) VALUES (?, ?)',
-                  (code, chess.Board().fen()))
+        db.execute('INSERT INTO rooms (code, board_state, status) VALUES (?, ?, ?)',
+                  (code, chess.Board().fen(), 'waiting'))
         db.commit()
         room_data = db.execute('SELECT * FROM rooms WHERE code = ?', (code,)).fetchone()
         print(f"✅ Nouveau salon créé: {code}")
@@ -265,7 +265,7 @@ def room(code):
     return render_template('room.html', room=room_data, code=code)
 
 # ========================================
-# API ENDPOINTS
+# API ENDPOINTS (Mode Ranked contre Bot)
 # ========================================
 
 @app.route('/api/make-move', methods=['POST'])
@@ -379,50 +379,113 @@ def get_stats():
     return jsonify(get_home_stats())
 
 # ========================================
-# WEBSOCKETS (Salons privés) - VERSION CORRIGEE
+# WEBSOCKETS (Salons privés) - VERSION AVEC BOUTON PRET
 # ========================================
 
-# Structure pour stocker les joueurs par salon
-room_players = {}  # Ex: { 'AB12CD': [sid1, sid2], ... }
+# Structure pour stocker les joueurs et leur état
+room_players = {}  
+# Format: { 'AB12CD': {'players': [sid1, sid2], 'ready': {sid1: False, sid2: False}, 'colors': {sid1: 'white', sid2: 'black'}} }
 
 @socketio.on('join')
 def on_join(data):
+    """Quand un joueur rejoint un salon"""
     room_code = data['room']
     join_room(room_code)
 
     # Initialiser le salon si nécessaire
     if room_code not in room_players:
-        room_players[room_code] = []
+        room_players[room_code] = {
+            'players': [],
+            'ready': {},
+            'colors': {}
+        }
 
-    # Ajouter le joueur à la liste
-    if request.sid not in room_players[room_code]:
-        room_players[room_code].append(request.sid)
+    # Ajouter le joueur à la liste s'il n'y est pas déjà
+    if request.sid not in room_players[room_code]['players']:
+        room_players[room_code]['players'].append(request.sid)
+        room_players[room_code]['ready'][request.sid] = False
 
-    player_count = len(room_players[room_code])
-    print(f"Joueur {request.sid} rejoint {room_code}. Total: {player_count}/2")
+    player_count = len(room_players[room_code]['players'])
+    print(f"🔵 Joueur {request.sid} rejoint {room_code}. Total: {player_count}/2")
 
     # Assigner la couleur selon l'ordre d'arrivée
     if player_count == 1:
         color = 'white'
+        room_players[room_code]['colors'][request.sid] = color
         emit('assign_color', {'color': color, 'message': 'Vous jouez les Blancs'})
-        emit('player_joined', {'count': player_count, 'message': 'En attente du joueur 2...'}, room=room_code)
     elif player_count == 2:
         color = 'black'
+        room_players[room_code]['colors'][request.sid] = color
         emit('assign_color', {'color': color, 'message': 'Vous jouez les Noirs'})
-        emit('game_start', {'message': 'Les 2 joueurs sont là ! La partie commence !'}, room=room_code)
+    else:
+        emit('assign_color', {'color': 'spectator', 'message': 'Spectateur'})
+
+    # Envoyer l'état actuel à tout le monde
+    ready_count = sum(1 for ready in room_players[room_code]['ready'].values() if ready)
+    emit('player_status', {
+        'player_count': player_count,
+        'ready_count': ready_count,
+        'max_players': 2
+    }, room=room_code)
+
+@socketio.on('toggle_ready')
+def on_toggle_ready(data):
+    """Quand un joueur clique sur le bouton Prêt"""
+    room_code = data['room']
+    
+    if room_code not in room_players:
+        print(f"⚠️ Salon {room_code} introuvable")
+        return
+    
+    if request.sid not in room_players[room_code]['ready']:
+        print(f"⚠️ Joueur {request.sid} non trouvé dans le salon")
+        return
+    
+    # Inverser l'état "prêt"
+    room_players[room_code]['ready'][request.sid] = not room_players[room_code]['ready'][request.sid]
+    
+    ready_count = sum(1 for ready in room_players[room_code]['ready'].values() if ready)
+    player_count = len(room_players[room_code]['players'])
+    
+    is_ready = room_players[room_code]['ready'][request.sid]
+    print(f"{'✅' if is_ready else '❌'} Joueur {request.sid} {'prêt' if is_ready else 'pas prêt'}. Total: {ready_count}/{player_count}")
+    
+    # Envoyer l'état mis à jour à tous les joueurs du salon
+    emit('player_status', {
+        'player_count': player_count,
+        'ready_count': ready_count,
+        'max_players': 2
+    }, room=room_code)
+    
+    # Si 2 joueurs sont prêts, démarrer la partie
+    if ready_count == 2 and player_count == 2:
+        print(f"🎮 Partie qui démarre dans le salon {room_code}")
+        emit('game_start', {'message': 'Les 2 joueurs sont prêts ! La partie commence !'}, room=room_code)
+        
         # Mettre à jour le statut du salon dans la base
         db = get_db()
         db.execute("UPDATE rooms SET status = 'playing' WHERE code = ?", (room_code,))
         db.commit()
         db.close()
-    else:
-        emit('assign_color', {'color': 'spectator', 'message': 'Spectateur'})
 
 @socketio.on('move')
 def on_move(data):
+    """Quand un joueur fait un coup"""
     room_code = data['room']
     move = data['move']
     board_fen = data['board']
+
+    # Vérifier que la partie a bien commencé
+    if room_code not in room_players:
+        emit('error', {'message': 'Salon introuvable'})
+        return
+    
+    ready_count = sum(1 for ready in room_players[room_code]['ready'].values() if ready)
+    player_count = len(room_players[room_code]['players'])
+    
+    if ready_count < 2 or player_count < 2:
+        emit('error', {'message': 'Attendez que les 2 joueurs soient prêts'})
+        return
 
     board = chess.Board(board_fen)
     try:
@@ -432,7 +495,8 @@ def on_move(data):
 
             # Mettre à jour l'état dans la base
             db = get_db()
-            db.execute('UPDATE rooms SET board_state = ? WHERE code = ?', (board.fen(), room_code))
+            db.execute('UPDATE rooms SET board_state = ?, current_turn = ? WHERE code = ?', 
+                      (board.fen(), 'black' if board.turn else 'white', room_code))
             db.commit()
             db.close()
 
@@ -444,26 +508,48 @@ def on_move(data):
                 'game_over': board.is_game_over(),
                 'result': board.result() if board.is_game_over() else None
             }, room=room_code)
+            
+            print(f"♟️ Coup joué dans {room_code}: {move}")
         else:
             emit('error', {'message': 'Coup illégal'})
     except Exception as e:
-        print(f"Erreur coup: {e}")
+        print(f"❌ Erreur coup: {e}")
         emit('error', {'message': 'Coup invalide'})
 
 @socketio.on('disconnect')
 def on_disconnect():
-    print(f"Déconnexion de {request.sid}")
-    for room_code, players in room_players.items():
-        if request.sid in players:
-            players.remove(request.sid)
-            player_count = len(players)
-            emit('player_left', {'count': player_count}, room=room_code)
+    """Quand un joueur se déconnecte"""
+    print(f"🔴 Déconnexion de {request.sid}")
+    
+    for room_code, room_data in list(room_players.items()):
+        if request.sid in room_data['players']:
+            # Retirer le joueur
+            room_data['players'].remove(request.sid)
+            if request.sid in room_data['ready']:
+                del room_data['ready'][request.sid]
+            if request.sid in room_data['colors']:
+                del room_data['colors'][request.sid]
+            
+            player_count = len(room_data['players'])
+            ready_count = sum(1 for ready in room_data['ready'].values() if ready)
+            
+            print(f"📊 Salon {room_code}: {player_count} joueurs restants")
+            
+            # Informer les autres joueurs
+            emit('player_left', {
+                'count': player_count
+            }, room=room_code)
 
             # Si plus personne, supprimer le salon de la mémoire
             if player_count == 0:
                 del room_players[room_code]
-            # Si un seul joueur reste, mettre à jour le statut
+                print(f"🗑️ Salon {room_code} supprimé (vide)")
+            # Si un seul joueur reste, remettre en attente
             else:
+                # Réinitialiser les états "prêt"
+                for sid in room_data['players']:
+                    room_data['ready'][sid] = False
+                
                 db = get_db()
                 db.execute("UPDATE rooms SET status = 'waiting' WHERE code = ?", (room_code,))
                 db.commit()
@@ -472,13 +558,24 @@ def on_disconnect():
 
 @socketio.on('leave')
 def on_leave(data):
+    """Quand un joueur quitte volontairement"""
     room_code = data['room']
     leave_room(room_code)
+    print(f"🚪 Joueur {request.sid} quitte {room_code}")
 
-    if room_code in room_players and request.sid in room_players[room_code]:
-        room_players[room_code].remove(request.sid)
-        player_count = len(room_players[room_code])
-        emit('player_left', {'count': player_count}, room=room_code)
+    if room_code in room_players and request.sid in room_players[room_code]['players']:
+        room_players[room_code]['players'].remove(request.sid)
+        if request.sid in room_players[room_code]['ready']:
+            del room_players[room_code]['ready'][request.sid]
+        if request.sid in room_players[room_code]['colors']:
+            del room_players[room_code]['colors'][request.sid]
+        
+        player_count = len(room_players[room_code]['players'])
+        ready_count = sum(1 for ready in room_players[room_code]['ready'].values() if ready)
+        
+        emit('player_left', {
+            'count': player_count
+        }, room=room_code)
 
         if player_count == 0:
             del room_players[room_code]
