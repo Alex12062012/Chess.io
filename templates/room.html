@@ -59,6 +59,101 @@
         transform: translateY(-2px);
     }
 
+    .ready-section {
+        background: #1a1917;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        border: 2px solid #3d3b38;
+    }
+
+    .ready-status {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 1rem;
+        gap: 1rem;
+    }
+
+    .ready-indicator {
+        flex: 1;
+        background: #262421;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 2px solid #3d3b38;
+        text-align: center;
+        transition: all 0.3s;
+    }
+
+    .ready-indicator.ready {
+        border-color: #f6c244;
+        background: rgba(246, 194, 68, 0.1);
+    }
+
+    .ready-indicator .player-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .ready-indicator .player-label {
+        color: #7c7a77;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .ready-indicator .ready-badge {
+        display: inline-block;
+        background: #f6c244;
+        color: #1a1917;
+        padding: 0.3rem 0.8rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-top: 0.5rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .ready-indicator.ready .ready-badge {
+        opacity: 1;
+    }
+
+    .ready-btn {
+        width: 100%;
+        background: #81b64c;
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .ready-btn:hover:not(:disabled) {
+        background: #9ac95a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(129, 182, 76, 0.4);
+    }
+
+    .ready-btn.ready {
+        background: #f6c244;
+        color: #1a1917;
+    }
+
+    .ready-btn.ready:hover {
+        background: #ffd666;
+    }
+
+    .ready-btn:disabled {
+        background: #4a4845;
+        cursor: not-allowed;
+        transform: none;
+        color: #7c7a77;
+    }
+
     .game-layout {
         display: grid;
         grid-template-columns: 1fr 500px 1fr;
@@ -101,18 +196,20 @@
         border: 2px solid #3d3b38;
     }
 
-    .waiting-player {
-        color: #7c7a77;
-        font-style: italic;
-        padding: 2rem;
-    }
-
     .chess-board-wrapper {
         background: #262421;
         border: 2px solid #3d3b38;
         border-radius: 16px;
         padding: 2rem;
         box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        opacity: 0.5;
+        pointer-events: none;
+        transition: opacity 0.3s;
+    }
+
+    .chess-board-wrapper.active {
+        opacity: 1;
+        pointer-events: all;
     }
 
     .chess-board {
@@ -214,14 +311,26 @@
             📤 Partagez ce lien avec votre ami
         </div>
         
-        <div style="background: #1a1917; padding: 1rem; border-radius: 8px; margin-top: 1rem; border: 2px solid #3d3b38;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
-                <div style="font-size: 2rem;">👥</div>
-                <div>
-                    <div style="color: #7c7a77; font-size: 0.9rem;">Joueurs connectés</div>
-                    <div style="color: #81b64c; font-size: 2rem; font-weight: bold;" id="playerCount">1</div>
+        <div class="ready-section" id="readySection">
+            <div class="ready-status">
+                <div class="ready-indicator" id="whiteReady">
+                    <div class="player-icon">♔</div>
+                    <div class="player-label">Blancs</div>
+                    <div style="color: #7c7a77; font-size: 0.85rem;">En attente...</div>
+                    <div class="ready-badge">✓ PRÊT</div>
+                </div>
+                
+                <div class="ready-indicator" id="blackReady">
+                    <div class="player-icon">♚</div>
+                    <div class="player-label">Noirs</div>
+                    <div style="color: #7c7a77; font-size: 0.85rem;">En attente...</div>
+                    <div class="ready-badge">✓ PRÊT</div>
                 </div>
             </div>
+            
+            <button class="ready-btn" id="readyBtn" onclick="toggleReady()">
+                ✓ Je suis prêt
+            </button>
         </div>
         
         <button class="copy-btn" onclick="copyCode()">
@@ -235,9 +344,9 @@
             <div class="player-color player-white">♔ Blancs</div>
         </div>
 
-        <div class="chess-board-wrapper">
+        <div class="chess-board-wrapper" id="boardWrapper">
             <div class="game-status" id="gameStatus">
-                ⏳ En attente du joueur 2...
+                ⏳ En attente des joueurs...
             </div>
 
             <div class="chess-board" id="chessBoard"></div>
@@ -254,6 +363,8 @@
     </div>
 </div>
 
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.12.1/chess.min.js"></script>
 <script>
 const PIECE_IMAGES = {
     'P': 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png',
@@ -278,6 +389,8 @@ let selectedSquare = null;
 let legalMoves = [];
 let myColor = null;
 let currentTurn = 'white';
+let gameStarted = false;
+let isReady = false;
 
 window.onload = function() {
     socket.emit('join', { room: roomCode });
@@ -291,34 +404,75 @@ socket.on('assign_color', function(data) {
     
     if (myColor === 'white') {
         document.getElementById('whitePlayer').innerHTML = 'Vous ♔';
-        document.getElementById('playerCount').textContent = '1';
-        document.getElementById('gameStatus').innerHTML = '⏳ En attente du joueur 2...';
+        document.querySelector('#whiteReady .player-label').innerHTML = '<strong>Vous</strong>';
     } else if (myColor === 'black') {
         document.getElementById('blackPlayer').innerHTML = 'Vous ♚';
-        document.getElementById('playerCount').textContent = '2';
+        document.querySelector('#blackReady .player-label').innerHTML = '<strong>Vous</strong>';
     } else {
         document.getElementById('gameStatus').innerHTML = '👁️ Mode spectateur';
+        document.getElementById('readyBtn').style.display = 'none';
     }
 });
 
-// Événement : joueur rejoint
-socket.on('player_joined', function(data) {
-    console.log('👤 Joueur rejoint, total:', data.count);
-    document.getElementById('playerCount').textContent = data.count;
+// Mise à jour du statut des joueurs
+socket.on('player_status', function(data) {
+    console.log('📊 Status:', data);
     
-    if (data.count === 1) {
-        document.getElementById('roomStatus').innerHTML = '📤 En attente du joueur 2...';
-        document.getElementById('playerCount').style.color = '#cc3f3f';
+    const readyBtn = document.getElementById('readyBtn');
+    const gameStatus = document.getElementById('gameStatus');
+    
+    if (data.player_count < 2) {
+        readyBtn.disabled = true;
+        readyBtn.textContent = '⏳ En attente du joueur 2...';
+        gameStatus.innerHTML = '⏳ En attente d\'un adversaire...';
+    } else {
+        readyBtn.disabled = false;
+        if (isReady) {
+            readyBtn.textContent = '✓ Prêt (Cliquer pour annuler)';
+            readyBtn.classList.add('ready');
+        } else {
+            readyBtn.textContent = '✓ Je suis prêt';
+            readyBtn.classList.remove('ready');
+        }
+        
+        if (data.ready_count === 0) {
+            gameStatus.innerHTML = '🎯 Cliquez sur "Je suis prêt" pour commencer';
+        } else if (data.ready_count === 1) {
+            gameStatus.innerHTML = '⏳ En attente de l\'autre joueur...';
+        }
     }
 });
+
+// Fonction toggle ready
+function toggleReady() {
+    isReady = !isReady;
+    socket.emit('toggle_ready', { room: roomCode });
+    
+    // Mise à jour visuelle locale
+    if (myColor === 'white') {
+        if (isReady) {
+            document.getElementById('whiteReady').classList.add('ready');
+        } else {
+            document.getElementById('whiteReady').classList.remove('ready');
+        }
+    } else if (myColor === 'black') {
+        if (isReady) {
+            document.getElementById('blackReady').classList.add('ready');
+        } else {
+            document.getElementById('blackReady').classList.remove('ready');
+        }
+    }
+}
 
 // Événement : partie commence
 socket.on('game_start', function(data) {
     console.log('🎮 Partie commence !');
-    document.getElementById('playerCount').textContent = '2';
-    document.getElementById('playerCount').style.color = '#81b64c';
+    gameStarted = true;
     
-    document.getElementById('roomStatus').innerHTML = '✅ Les 2 joueurs sont présents !';
+    document.getElementById('readySection').style.display = 'none';
+    document.getElementById('boardWrapper').classList.add('active');
+    
+    document.getElementById('roomStatus').innerHTML = '✅ Partie en cours !';
     document.getElementById('roomStatus').style.background = 'rgba(129, 182, 76, 0.2)';
     document.getElementById('roomStatus').style.color = '#9ac95a';
     document.getElementById('roomStatus').style.borderColor = '#9ac95a';
@@ -345,17 +499,24 @@ socket.on('move_made', function(data) {
 
 socket.on('player_left', function(data) {
     console.log('❌ Joueur parti, restants:', data.count);
-    document.getElementById('playerCount').textContent = data.count;
+    gameStarted = false;
+    isReady = false;
+    
+    document.getElementById('boardWrapper').classList.remove('active');
+    document.getElementById('readySection').style.display = 'block';
+    document.getElementById('whiteReady').classList.remove('ready');
+    document.getElementById('blackReady').classList.remove('ready');
     
     if (data.count === 1) {
         document.getElementById('gameStatus').innerHTML = '⚠️ Adversaire déconnecté';
-        document.getElementById('playerCount').style.color = '#cc3f3f';
         document.getElementById('roomStatus').innerHTML = '📤 En attente d\'un nouveau joueur...';
         document.getElementById('roomStatus').style.background = 'rgba(204, 63, 63, 0.1)';
         document.getElementById('roomStatus').style.color = '#ff6b6b';
-    } else if (data.count === 0) {
-        document.getElementById('gameStatus').innerHTML = '❌ Tous les joueurs ont quitté';
     }
+});
+
+socket.on('error', function(data) {
+    alert('❌ ' + data.message);
 });
 
 function parseFEN(fen) {
@@ -409,7 +570,7 @@ function renderBoard() {
             square.appendChild(img);
         }
         
-        if (isMyTurn()) {
+        if (gameStarted && isMyTurn()) {
             square.onclick = function() {
                 handleSquareClick(squareName, pieces[i] || '');
             };
@@ -422,7 +583,7 @@ function renderBoard() {
 }
 
 function isMyTurn() {
-    if (!myColor) return false;
+    if (!myColor || !gameStarted) return false;
     return currentTurn === myColor;
 }
 
